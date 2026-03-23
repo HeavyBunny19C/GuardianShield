@@ -66,16 +66,27 @@ jobs:
 
           Write-Host "=== All security checks passed ==="
 
-      - name: Upload Build Artifacts
+      - name: Package Deployment Bundle
+        shell: pwsh
+        run: |
+          $pkg = "deploy-package"
+          New-Item -ItemType Directory -Path $pkg -Force | Out-Null
+          Copy-Item "build/src/service/GuardianA/Release/svchost_core.exe" $pkg/
+          Copy-Item "build/src/service/GuardianB/Release/svchost_helper.exe" $pkg/
+          Copy-Item "build/src/service/GuardianC/Release/winmon.exe" $pkg/
+          Copy-Item "install.bat" $pkg/
+          Copy-Item "config/guardian_config.yaml" $pkg/
+          Copy-Item "config/auth.list" $pkg/
+          Write-Host "Deployment package contents:"
+          Get-ChildItem $pkg | Format-Table Name, Length
+
+      - name: Upload Deployment Package
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: guardianshield-v3.3.0-win64
-          path: |
-            build/src/service/GuardianA/Release/svchost_core.exe
-            build/src/service/GuardianB/Release/svchost_helper.exe
-            build/src/service/GuardianC/Release/winmon.exe
-          retention-days: 30
+          name: GuardianShield-v3.3.0-deploy
+          path: deploy-package/
+          retention-days: 90
 
       - name: Upload Test Results
         if: always()
