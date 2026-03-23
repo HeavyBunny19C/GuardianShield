@@ -562,7 +562,7 @@ void SharedMemory::UpdateHeartbeat(NodeId nodeId, const HeartbeatPayload& heartb
     if (m_stateBlock && nodeId != NodeId::UNKNOWN) {
         int idx = static_cast<int>(nodeId);
         m_stateBlock->heartbeats[idx] = heartbeat;
-        m_stateBlock->last_update = GetCurrentTimestamp();
+        InterlockedExchange64((LONGLONG*)&m_stateBlock->last_update, (LONGLONG)GetCurrentTimestamp());
         m_stateBlock->sequence++;
     }
     Unlock();
@@ -582,7 +582,7 @@ void SharedMemory::SetEmergencyState(EmergencyState state) {
     Lock();
     if (m_stateBlock) {
         m_stateBlock->emergency_state = static_cast<uint8_t>(state);
-        m_stateBlock->last_update = GetCurrentTimestamp();
+        InterlockedExchange64((LONGLONG*)&m_stateBlock->last_update, (LONGLONG)GetCurrentTimestamp());
     }
     Unlock();
 }
