@@ -301,10 +301,10 @@ TEST_F(HMACSecurityTest, TamperedPayloadFailsVerification) {
 
 /**
  * Test 3: Zero-checksum (all bytes are 0) should be REJECTED
- * BUG DETECTION TEST - This test will FAIL because VerifyChecksum does not reject
- * all-zero checksums. The bug: CalculateChecksum sets checksum to all zeros on HMAC
- * failure, creating a valid-looking (but actually failed) checksum.
- * A message with all-zero checksum should be rejected as invalid.
+ * SECURITY TEST - Verifies that VerifyChecksum rejects all-zero checksums.
+ * The fix: CalculateChecksum returns false on HMAC failure (no longer writes zeros),
+ * and VerifyChecksum explicitly rejects all-zero checksums as invalid.
+ * A message with all-zero checksum is rejected as a potential bypass attempt.
  */
 TEST_F(HMACSecurityTest, ZeroChecksumBypassDetection) {
     MessageHeader header = {};
@@ -322,10 +322,10 @@ TEST_F(HMACSecurityTest, ZeroChecksumBypassDetection) {
     // Deliberately set checksum to all zeros (bypass attempt)
     memset(header.checksum, 0, CHECKSUM_SIZE);
 
-    // VerifyChecksum should REJECT this because all-zero is not a valid HMAC output
-    // EXPECTED FAILURE: This test exposes the bug - VerifyChecksum doesn't reject zeros
+    // VerifyChecksum MUST REJECT this — all-zero is not a valid HMAC output
+    // This test verifies the fix is in place (was a bug, now fixed)
     bool verified = VerifyChecksum(header, &payload);
-    EXPECT_FALSE(verified) << "Zero checksum should be rejected as invalid (BUG: currently returns true)";
+    EXPECT_FALSE(verified) << "Zero checksum should be rejected as invalid";
 }
 
 /**
