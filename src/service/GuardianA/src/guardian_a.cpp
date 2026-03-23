@@ -169,6 +169,12 @@ GuardianA::~GuardianA() {
 
 void GuardianA::OnStart(DWORD argc, LPWSTR* argv) {
     LogEvent(EVENTLOG_INFORMATION_TYPE, L"GuardianA starting...");
+
+    m_leaderMutex = CreateMutexW(NULL, TRUE, L"Global\\GuardianShield-Leader");
+    if (!m_leaderMutex) {
+        LogEvent(EVENTLOG_WARNING_TYPE,
+                 L"Failed to create leader election mutex; continuing without split-brain lock");
+    }
     
     if (!Initialize()) {
         LogEvent(EVENTLOG_ERROR_TYPE, L"GuardianA initialization failed");
@@ -198,6 +204,13 @@ void GuardianA::OnStop() {
     LogEvent(EVENTLOG_INFORMATION_TYPE, L"GuardianA stopping...");
     m_running = false;
     StopWorkerThreads();
+
+    if (m_leaderMutex) {
+        ReleaseMutex(m_leaderMutex);
+        CloseHandle(m_leaderMutex);
+        m_leaderMutex = NULL;
+    }
+
     LogEvent(EVENTLOG_INFORMATION_TYPE, L"GuardianA stopped");
 }
 
