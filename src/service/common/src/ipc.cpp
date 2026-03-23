@@ -626,10 +626,10 @@ bool TcpServer::Start() {
     if (m_running) return true;
 
     if (m_useTLS) {
-        if (g_logger)
-            g_logger->Log(LogLevel::WARN,
-                "TcpServer: TLS requested but SChannel negotiation is not yet implemented. "
-                "Falling back to plaintext loopback. Phase 2.8 will add full TLS support.");
+         if (g_logger)
+             g_logger->Log(LogLevel::WARN,
+                 "TcpServer: TLS deferred to V2. Plaintext loopback active with peer validation. "
+                 "Phase 2.8 will add full TLS support.");
         m_useTLS = false;
     }
     
@@ -689,23 +689,32 @@ void TcpServer::Stop() {
 }
 
 void TcpServer::AcceptLoop() {
-    while (m_running) {
-        sockaddr_in clientAddr = {};
-        int clientAddrSize = sizeof(clientAddr);
-        
-        SOCKET clientSocket = accept(m_listenSocket, (sockaddr*)&clientAddr, &clientAddrSize);
-        if (clientSocket == INVALID_SOCKET) {
-            continue;
-        }
-        
-        if (m_running) {
-            std::thread clientThread(&TcpServer::HandleClient, this, clientSocket);
-            clientThread.detach();
-        } else {
-            closesocket(clientSocket);
-        }
-    }
-}
+     while (m_running) {
+         sockaddr_in clientAddr = {};
+         int clientAddrSize = sizeof(clientAddr);
+         
+         SOCKET clientSocket = accept(m_listenSocket, (sockaddr*)&clientAddr, &clientAddrSize);
+         if (clientSocket == INVALID_SOCKET) {
+             continue;
+         }
+         
+         // Validate peer connection is from loopback (127.0.0.1)
+         sockaddr_in peerAddr{};
+         int peerLen = sizeof(peerAddr);
+         if (getpeername(clientSocket, (sockaddr*)&peerAddr, &peerLen) == SOCKET_ERROR ||
+             peerAddr.sin_addr.s_addr != htonl(INADDR_LOOPBACK)) {
+             closesocket(clientSocket);
+             continue;
+         }
+         
+         if (m_running) {
+             std::thread clientThread(&TcpServer::HandleClient, this, clientSocket);
+             clientThread.detach();
+         } else {
+             closesocket(clientSocket);
+         }
+     }
+ }
 
 void TcpServer::HandleClient(SOCKET clientSocket) {
     std::vector<uint8_t> buffer(65536);
