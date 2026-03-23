@@ -1,0 +1,23 @@
+TASK: Fix ETW degradation log level in guardian_a.cpp
+STATUS: COMPLETED
+
+CHANGES MADE:
+1. Line 327: Upgraded ETW initialization failure from Warn to Error
+   - Changed: g_logger->Warn("ETW initialization failed - relying on minifilter only")
+   - To: g_logger->Error("ETW initialization failed - relying on minifilter only")
+
+2. Line 328: Added Windows Event Log entry with ERROR type
+   - Added: LogEvent(EVENTLOG_ERROR_TYPE, L"ETW initialization failed - file I/O monitoring via ETW is unavailable")
+
+3. Line 397: Removed FIX-10 comment marker
+   - Removed: // FIX-10: 升级为 ERROR 级别
+
+VERIFICATION:
+- ETW failure now logs at ERROR level (not WARN)
+- Windows Event Log receives ERROR type notification
+- Service continues in degraded mode (minifilter only)
+- No ETW initialization logic was modified
+- FIX-10 marker removed as fix is complete
+
+FILE: src/service/GuardianA/src/guardian_a.cpp
+LINES MODIFIED: 326-328, 396-398

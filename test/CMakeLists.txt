@@ -47,6 +47,7 @@ set(TEST_SOURCES
     test_event_response_config.cpp
     test_security.cpp
     test_event_logging.cpp
+    test_etw_pipeline.cpp
     ${CMAKE_SOURCE_DIR}/src/service/GuardianA/src/threat_evaluator.cpp
 )
 

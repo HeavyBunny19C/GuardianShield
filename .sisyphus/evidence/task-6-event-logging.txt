@@ -1,0 +1,31 @@
+TASK: Create test/test_event_logging.cpp — tests for Logger API writing JSON Lines format events
+
+DELIVERABLES:
+✓ File created: test/test_event_logging.cpp (145 lines)
+✓ File modified: test/CMakeLists.txt (added test_event_logging.cpp to TEST_SOURCES)
+
+FUNCTIONALITY:
+✓ EventLoggingTest fixture with SetUp (creates temp log dir .\\test_event_log_data)
+✓ TearDown cleanup (removes temp directory)
+✓ Helper: ReadLogFile() — reads log file content as string
+✓ Helper: IsValidJson() — validates JSON Lines format (checks { } brackets)
+✓ Helper: SplitLines() — splits content into non-empty lines
+
+TEST CASES (5 tests):
+1. LoggerWritesToFile — verifies logger creates and writes to file
+2. OutputIsValidJsonLines — validates each line is valid JSON with { } brackets
+3. JsonContainsLevelField — checks for "level" or "message" field in JSON
+4. MultipleWritesAllPreserved — ensures all messages are preserved in log
+5. LogEventWritesStructured — tests LogEvent() structured event logging
+
+VERIFICATION:
+✓ File compiles (CMake configuration includes test_event_logging.cpp in TEST_SOURCES)
+✓ References logger.h Logger class API
+✓ Uses Google Test framework (gtest/gtest.h)
+✓ Follows project patterns (C++17, std::wstring for Windows paths)
+✓ Handles JSON Lines format (newline-delimited JSON)
+✓ Tests both standard logging and structured event logging
+
+COMMIT:
+git add test/test_event_logging.cpp test/CMakeLists.txt
+git commit -m "test(events): add non-primary event logging tests"

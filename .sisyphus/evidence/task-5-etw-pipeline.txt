@@ -1,0 +1,36 @@
+Task 5: ETW pipeline mock event injection tests
+Date: 2026-03-23
+
+Changes made:
+1) Added test/test_etw_pipeline.cpp
+   - New ETWPipelineTest fixture with ThreatEvaluator tier thresholds.
+   - 11 TEST_F cases covering:
+     * FILE_CREATE classification (LEVEL_0/LEVEL_1 bound)
+     * FILE_WRITE classification
+     * FILE_DELETE classification
+     * FILE_RENAME classification
+     * FILE_COMPRESS classification with processName="7z.exe"
+     * FILE_NETWORK_TRANSFER classification with processName="curl.exe"
+     * FILE_MOVE classification (CREATE+DELETE correlation scenario)
+     * PROCESS_CREATE classification
+     * PROC_TERMINATE classification
+     * Batch threshold: 11 FILE_WRITE -> TIER_1
+     * Batch threshold: 51 FILE_WRITE -> TIER_2
+   - Uses direct DriverEvent injection and does not call ETW APIs.
+
+2) Updated test/CMakeLists.txt
+   - Added test_etw_pipeline.cpp to TEST_SOURCES.
+
+Verification evidence:
+- lsp_diagnostics(test/test_etw_pipeline.cpp): reports parser errors starting at missing gtest/gtest.h
+- lsp_diagnostics(test/test_threat_evaluator.cpp): same pre-existing gtest/gtest.h missing baseline in this macOS environment
+- Build attempt 1:
+  command: cmake --build build --target GuardianTests
+  output: zsh:1: command not found: cmake
+- Build attempt 2:
+  command: ninja -C build GuardianTests
+  output: zsh:1: command not found: ninja
+
+Conclusion:
+- Source changes required for Task 5 are implemented.
+- Compile verification is blocked in current local environment due missing build tools (cmake/ninja) and unresolved local gtest headers in LSP.

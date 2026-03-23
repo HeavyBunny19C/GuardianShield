@@ -1,0 +1,63 @@
+TASK 2: HMAC Security Tests Extension
+======================================
+
+COMPLETION EVIDENCE
+-------------------
+
+FILE MODIFIED: test/test_ipc.cpp (lines 236-375)
+
+NEW TEST FIXTURE: HMACSecurityTest
+- Class definition: line 240-243
+- Inherits from ::testing::Test
+- SetUp() override for test initialization
+
+TEST CASES (5 total):
+
+1. TEST_F(HMACSecurityTest, ValidMessageVerifiesSuccessfully) [lines 249-270]
+   PURPOSE: Valid message with calculated checksum should verify successfully (happy path)
+   ASSERTION: EXPECT_TRUE(verified)
+   EXPECTED: PASS (implementation is correct for this case)
+
+2. TEST_F(HMACSecurityTest, TamperedPayloadFailsVerification) [lines 272-302]
+   PURPOSE: Tampered payload (flip one byte) should fail verification
+   APPROACH: Calculate checksum, then XOR payload with 0x00000001 to flip first byte
+   ASSERTION: EXPECT_FALSE(verified)
+   EXPECTED: PASS (tampering is detected)
+
+3. TEST_F(HMACSecurityTest, ZeroChecksumBypassDetection) [lines 304-329]
+   PURPOSE: ZERO-CHECKSUM BYPASS BUG DETECTION (TDD RED PHASE)
+   APPROACH: Deliberately set header.checksum to all zeros
+   ASSERTION: EXPECT_FALSE(verified) << "Zero checksum should be rejected..."
+   EXPECTED: FAIL (currently returns true because VerifyChecksum doesn't reject all-zeros)
+   BUG EXPOSED: CalculateChecksum calls memset(checksumOut, 0, CHECKSUM_SIZE) on HMAC failure
+                This creates a valid-looking-but-actually-failed checksum of all zeros.
+                VerifyChecksum accepts it without validation.
+
+4. TEST_F(HMACSecurityTest, TruncatedMessageDeserializationFails) [lines 331-344]
+   PURPOSE: Truncated message (shorter than MESSAGE_HEADER_SIZE) should fail deserialization
+   ASSERTION: EXPECT_FALSE(result)
+   EXPECTED: PASS (DeserializeMessage correctly validates minimum size)
+
+5. TEST_F(HMACSecurityTest, CalculateChecksumProducesNonZeroOutput) [lines 346-375]
+   PURPOSE: CalculateChecksum should produce non-zero output for valid input
+   APPROACH: Calculate checksum, check all 12 bytes aren't zero
+   ASSERTION: EXPECT_FALSE(allZeros) << "Checksum should be non-zero..."
+   EXPECTED: PASS (valid HMAC output is non-zero)
+
+SUMMARY
+-------
+✓ HMACSecurityTest fixture added
+✓ 5 test cases implemented
+✓ Test 3 (ZeroChecksumBypassDetection) expected to FAIL - exposes bug
+✓ File structure preserved (appended, no replacement)
+✓ Uses existing includes and Guardian namespace
+✓ All tests follow Google Test pattern (TEST_F macro)
+
+TDD CYCLE STATUS: RED PHASE
+- Tests 1, 2, 4, 5: Expected to pass (implement correct behavior)
+- Test 3: Expected to fail (exposes zero-checksum bypass vulnerability)
+
+KEY SECURITY IMPLICATIONS:
+- Test 3 documents the vulnerability: all-zero checksums should never be accepted
+- VerifyChecksum needs to validate checksum != all_zeros before acceptance
+- This prevents attackers from spoofing messages with empty/failed HMAC values

@@ -1,0 +1,21 @@
+Task: Extend test/test_state_sync.cpp with failover/split-brain tests.
+Date: 2026-03-23
+
+Changes applied:
+- Added Windows-guarded FailoverTest fixture in test/test_state_sync.cpp.
+- Added mutex semantics tests for:
+  1) initial acquire succeeds
+  2) second promotion attempt times out while leader held
+  3) release and reacquire succeeds
+  4) abandoned mutex becomes acquirable (WAIT_ABANDONED)
+  5) heartbeat nonce stall reaches missed-beat threshold
+- Used CreateMutexW(NULL, FALSE, L"Global\\GuardianShield-Leader") and WaitForSingleObject(..., 0) semantics.
+
+Verification evidence:
+- Command: cmake --build build --target test_state_sync
+- Result: FAILED in this environment (cmake not installed: "command not found: cmake").
+- LSP diagnostics on macOS/clang are not actionable in this workspace due missing test dependencies (gtest headers not present in local toolchain context).
+
+Additional checks:
+- Failover test count confirmed: 5 (`TEST_F(FailoverTest, ...)` occurrences).
+- Commit created: `2b6b490` with message `test(failover): add split-brain and heartbeat timeout tests`.

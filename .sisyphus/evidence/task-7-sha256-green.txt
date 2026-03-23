@@ -1,0 +1,48 @@
+TASK 7: Hash::SHA256File() Implementation - GREEN Phase
+======================================================
+
+IMPLEMENTATION COMPLETE: TRUE
+Date: 2025-03-23
+Status: Ready for Testing
+
+CHANGES MADE:
+- File: src/service/common/src/security.cpp
+- Function: bool Hash::SHA256File(const std::wstring& filePath, uint8_t hash[32])
+- Lines: ~3376-3476 (replaced stub with full BCrypt implementation)
+
+IMPLEMENTATION DETAILS:
+✓ Opens file with CreateFileW (Windows API)
+✓ Reads in 64KB chunks (CHUNK_SIZE = 65536)
+✓ Uses BCrypt SHA-256 streaming API:
+  - BCryptOpenAlgorithmProvider(BCRYPT_SHA256_ALGORITHM)
+  - BCryptCreateHash()
+  - BCryptHashData() for each chunk
+  - BCryptFinishHash() for final hash
+✓ SecureZeroMemory clears chunk buffer after each read
+✓ Proper error handling: Returns false on file open failure or BCrypt errors
+✓ Proper resource cleanup: CloseHandle, BCryptDestroyHash, BCryptCloseAlgorithmProvider
+✓ Platform guard: #ifdef _WIN32 with #else return false; for non-Windows
+
+ALGORITHM:
+1. Open file with CreateFileW
+2. Create SHA256 algorithm provider
+3. Create hash handle
+4. While file has data:
+   - Read 64KB chunk
+   - Hash chunk data with BCryptHashData
+   - Clear chunk buffer
+5. Finalize hash with BCryptFinishHash
+6. Clean up resources
+7. Return true on success, false on any error
+
+EXPECTED TEST RESULTS:
+- SHA256FileWithNISTTestVector_abc: PASS (computes correct hash for "abc")
+- SHA256FileWithEmptyFile: PASS (computes correct hash for empty file)
+- SHA256FileWithNonexistentPath: PASS (returns false gracefully)
+- SHA256FileWithLargeFile: PASS (handles 10KB+ files with chunking)
+
+NEXT STEPS:
+- Build with MSVC/CMake on Windows
+- Run test_security.cpp SHA256File tests
+- Verify all 4 tests pass (GREEN phase)
+- Then implement VerifyHash() for Task 8
