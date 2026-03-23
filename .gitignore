@@ -47,3 +47,4 @@ config/default.txt
 
 # IDE extensions
 .specstory/
+*.msi
