@@ -29,7 +29,7 @@
 
 | 模块 | 状态 | 产物 | 说明 |
 |------|------|------|------|
-| Common 共享库 | 已完成 | GuardianCommon.lib | 14 模块: common_types, config, logger, ipc, windows_service, file_locker, file_encryptor, file_wiper, security, environment_validator, notification_manager, driver_client |
+| Common 共享库 | 已完成 | GuardianCommon.lib | 13 模块: common_types, config, logger, ipc, windows_service, file_locker, file_encryptor, file_wiper, security, environment_validator, notification_manager, driver_client |
 | GuardianA 主控服务 | 已完成 | svchost_core.exe (248 KB) | 威胁评估、紧急协议、批量检测、心跳、IPC、CLI 管理 |
 | GuardianB 备控服务 | 已完成 | svchost_helper.exe (251 KB) | 心跳监控、故障接管/退回、事件转发、紧急协议 |
 | GuardianC 用户监控 | 已完成 | winmon.exe (158 KB) | ETW 事件收集、心跳监控、全屏锁屏窗口、系统托盘状态、注册表自启 |
@@ -38,7 +38,7 @@
 | guardian_ca.dll | 已完成 | guardian_ca.dll (24 KB) | WiX MSI 自定义动作：安装密钥验证、配置文件复制 |
 | MSI 安装包 | 已完成 | WiX 源文件 | 统一安装包：密钥验证 + 配置文件选择 + 服务注册 |
 | 一键卸载脚本 | 已完成 | uninstall.bat | 密钥验证 + 服务停止/删除 + 注册表/文件清理 |
-| 测试套件 | 已完成 | GuardianTests.exe | 12 文件, ~167 用例, Google Test 框架 |
+| 测试套件 | 已完成 | GuardianTests.exe | 17 文件, ~300+ 用例, Google Test 框架 |
 
 ---
 
@@ -412,8 +412,7 @@ GuardianC 运行后会在系统托盘显示图标：
 
 右键托盘图标菜单：
 - **查看状态** — 显示 GuardianA/B 连接状态和当前威胁级别
-- **查看日志** — 打开日志文件目录
-- **退出** — 退出程序（需确认）
+- **文件管理面板**（退出选项已隐藏）
 
 ### 单事件威胁等级
 
@@ -601,7 +600,7 @@ GuardianShield/
 | 安全擦除 | DOD 5220.22-M, 7 次覆写 | BCryptGenRandom 随机源 + FILE_FLAG_WRITE_THROUGH |
 | 文件锁定 | CreateFileW 独占模式 | dwShareMode=0, 线程安全管理 |
 | 全屏锁屏窗口 | WS_EX_TOPMOST + WS_POPUP + 定时器置顶 | 覆盖全部显示器，无关闭按钮，密码输入解锁 |
-| 三重 IPC | Named Pipe + Shared Memory + TCP Loopback | 任一通道断开不影响其余 |
+| 三重 IPC | Named Pipe + Shared Memory（TCP 通道已定义但未被 IpcManager 初始化） | 任一通道断开不影响其余 |
 | IPC 消息完整性 | HMAC-SHA256 校验 (12 字节截断) | 防止 IPC 消息篡改 |
 | 心跳监控 | 500ms 间隔, 3 次超时 | 1.5 秒内完成故障转移 |
 | 环境绑定 | IP/MAC 白名单 | auth.list 读后自动删除，数据纳入二进制缓存 |
@@ -656,8 +655,9 @@ A: 已在 CMakeLists.txt 中添加 `/utf-8` 编译标志。如仍出现，检查
 
 ```
 C:\ProgramData\GuardianShield\logs\
-  guardian_YYYY-MM-DD.json      — 系统日志（每日轮转）
-  monitor_YYYY-MM-DD.json       — 监控事件日志
+  guardian_a_YYYY-MM-DD.json      — 系统日志（按节点独立文件）
+  guardian_b_YYYY-MM-DD.json
+  guardian_c_YYYY-MM-DD.json
 ```
 
 日志格式为 JSON，可用 `jq` 或任何 JSON 查看器分析。

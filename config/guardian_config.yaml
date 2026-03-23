@@ -75,8 +75,7 @@ system:                  # 系统基础配置节
 
   # config_version: 配置文件内部递增版本
   #   - 每次修改配置后应手动递增此数字
-  #   - 【当前版本注意】此字段已被 YAML 解析器读取但代码未使用其值
-  #     未来版本可能用于判断配置是否有更新
+  #   - 【当前版本未解析】此字段未被代码读取，预留字段
   #   - 取值范围: 正整数
   config_version: 3      # 每次修改配置后手动 +1（当前版本未使用，预留）
 
@@ -191,7 +190,7 @@ detection:               # 威胁检测配置节
       file_network_transfer_count: 10           # 网络传输文件次数阈值
       file_network_transfer_window_seconds: 5   # 网络传输滑动窗口（秒）
       data_transfer_mb: 1                       # 累计网络传输数据量阈值（单位: MB）
-      process_termination_count: 50             # 进程终止次数阈值（v2.1: 降级为 LEVEL_0/LOG，仅供统计参考）
+      process_termination_count: 50             # 进程终止次数阈值（代码内置默认: 2）（v2.1: 降级为 LEVEL_0/LOG，仅供统计参考）
       process_termination_window_seconds: 5      # 进程终止检测时间窗口（秒）
 
     # ---- Tier 2: 紧急协议阈值（加密 + 擦除 + 删除 + 锁屏，不可逆） ----
@@ -212,7 +211,7 @@ detection:               # 威胁检测配置节
       file_network_transfer_count: 40            # 网络传输文件次数阈值
       file_network_transfer_window_seconds: 10   # 网络传输滑动窗口（秒）
       data_transfer_mb: 10                       # 累计网络传输数据量阈值（单位: MB）
-      process_termination_count: 200             # 进程终止次数阈值（v2.1: 降级为 LEVEL_0/LOG，仅供统计参考）
+      process_termination_count: 200             # 进程终止次数阈值（代码内置默认: 6）（v2.1: 降级为 LEVEL_0/LOG，仅供统计参考）
       process_termination_window_seconds: 5      # 进程终止检测时间窗口（秒）
 
 
@@ -274,12 +273,14 @@ authorization:           # 环境授权配置节
   # check_on_boot: 是否在每次启动时校验环境
   #   - true = 每次启动都验证 IP/MAC（推荐）
   #   - false = 跳过环境校验
+  #   - 【当前版本未解析】代码仅读取 authorization.list_path，此字段预留
   #   - 默认: true
   check_on_boot: true    # true=每次启动验证设备合法性 / false=跳过校验
 
   # strict_mode: 严格模式
   #   - true = 未授权设备直接触发最高等级处置（紧急协议）
   #   - false = 未授权设备仅记录告警，不触发紧急协议
+  #   - 【当前版本未解析】代码仅读取 authorization.list_path，此字段预留
   #   - 默认: true（生产环境强烈建议开启）
   strict_mode: true      # true=未授权设备触发紧急协议 / false=仅告警不触发
 
@@ -290,9 +291,9 @@ authorization:           # 环境授权配置节
 logging:                 # 日志配置节
   # path: 日志文件存储路径
   #   - 与 system.log_path 功能相同，此处为日志模块专用配置
-  #   - 【注意】代码实际读取 system.log_path，此字段作为冗余保留
+  #   - 代码同时读取此字段和 system.log_path，此字段可覆盖 system.log_path
   #   - 默认: "C:\\ProgramData\\GuardianShield\\logs"
-  path: "C:\\ProgramData\\GuardianShield\\logs"  # 日志文件存储目录（冗余: 代码读取 system.log_path）
+  path: "C:\\ProgramData\\GuardianShield\\logs"  # 日志文件存储目录（代码同时读取此字段和 system.log_path）
 
   # format: 日志输出格式
   #   - 可选值: json | text
@@ -375,6 +376,7 @@ whitelist:               # 进程白名单配置节
   #       WRITE = 允许修改保护文件
   #   - conditions: （可选）附加条件
   #       user: 仅当指定用户/用户组运行该进程时白名单生效
+  #   - 【当前版本未解析】conditions 节未被解析器读取，仅支持 name/permissions
   #   - 【安全提示】白名单应尽量精简，仅添加必需的开发工具
   #
   #   【v2.1 UWP 支持】
@@ -419,6 +421,13 @@ whitelist:               # 进程白名单配置节
 # 当检测到严重威胁（网络传输、批量操作超阈值、进程被终止超阈值等）时，
 # 系统按以下状态流自动推进：
 #
+#   Tier-1 (保护协议):
+#   NORMAL  ──触发──>  ALERT  ──超时──>  ENCRYPTING  ──完成──>  LOCKED
+#     ^                  |
+#     |                  | (管理员在 ALERT 阶段取消)
+#     +------------------+
+#
+#   Tier-2 (紧急协议):
 #   NORMAL  ──触发──>  ALERT  ──超时──>  ENCRYPTING  ──完成──>  WIPING  ──完成──>  DELETING  ──完成──>  LOCKED
 #     ^                  |
 #     |                  | (管理员在 ALERT 阶段取消)
@@ -479,6 +488,7 @@ emergency:               # 紧急协议配置节（高度敏感，仅管理员�
   #       WEBHOOK = HTTP Webhook 通知
   #   - recipients: 邮件接收地址列表（EMAIL 类型）
   #   - url: Webhook 回调地址（WEBHOOK 类型）
+  #   - 【当前版本未解析】通知渠道配置未被代码读取，预留字段
   #   - 提示: 可同时配置多个通知渠道
   notifications:           # 紧急事件通知渠道列表
     - type: EMAIL                                        # 通知类型: EMAIL=邮件通知
