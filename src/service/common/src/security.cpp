@@ -212,7 +212,19 @@ std::string Hash::ToHexString(const uint8_t* hash, size_t size) {
 
 // ProcessIntegrity Implementation
 bool ProcessIntegrity::VerifyHash(const std::wstring& processPath, const uint8_t expectedHash[32]) {
-    return false;
+    uint8_t actualHash[32];
+    
+    // Get the file's hash
+    if (!Hash::SHA256File(processPath, actualHash)) {
+        return false;
+    }
+    
+    // Constant-time comparison to prevent timing side-channel attacks
+    volatile uint8_t diff = 0;
+    for (size_t i = 0; i < 32; i++) {
+        diff |= actualHash[i] ^ expectedHash[i];
+    }
+    return diff == 0;
 }
 
 bool ProcessIntegrity::IsElevated() {
