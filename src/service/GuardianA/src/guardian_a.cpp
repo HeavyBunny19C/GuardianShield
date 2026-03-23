@@ -617,6 +617,11 @@ bool GuardianA::InitializeEtw() {
     props->MaximumBuffers = 64;
 
     ULONG status = StartTraceW(&m_traceSession, ETW_SESSION_NAME, props);
+    if (status == ERROR_ALREADY_EXISTS) {
+        if (g_logger) g_logger->Warn("ETW orphan session detected, stopping and retrying");
+        ControlTraceW(0, ETW_SESSION_NAME, props, EVENT_TRACE_CONTROL_STOP);
+        status = StartTraceW(&m_traceSession, ETW_SESSION_NAME, props);
+    }
     if (status != ERROR_SUCCESS) {
         if (g_logger) g_logger->Error("ETW StartTrace failed: error %lu", status);
         LogEvent(EVENTLOG_ERROR_TYPE, L"ETW StartTrace failed — file I/O monitoring via ETW is unavailable");

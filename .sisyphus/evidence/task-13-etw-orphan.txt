@@ -1,0 +1,31 @@
+TASK 13: Handle ERROR_ALREADY_EXISTS in ETW session initialization
+=======================================================================
+
+FILE MODIFIED: src/service/GuardianA/src/guardian_a.cpp
+
+CHANGE LOCATION: Lines 619-632 (InitializeEtw function)
+
+IMPLEMENTATION:
+- Added ERROR_ALREADY_EXISTS check after StartTraceW() call
+- When detected:
+  1. Log warning: "ETW orphan session detected, stopping and retrying"
+  2. Call ControlTraceW() with EVENT_TRACE_CONTROL_STOP to stop orphan session
+  3. Retry StartTraceW() once
+- If retry fails, fall through to existing error handling (degraded mode)
+
+CODE PATTERN:
+    ULONG status = StartTraceW(&m_traceSession, ETW_SESSION_NAME, props);
+    if (status == ERROR_ALREADY_EXISTS) {
+        if (g_logger) g_logger->Warn("ETW orphan session detected, stopping and retrying");
+        ControlTraceW(0, ETW_SESSION_NAME, props, EVENT_TRACE_CONTROL_STOP);
+        status = StartTraceW(&m_traceSession, ETW_SESSION_NAME, props);
+    }
+    if (status != ERROR_SUCCESS) {
+        // existing error handling
+    }
+
+VERIFICATION:
+- Edit applied successfully
+- No changes to ETW session name "GuardianShieldETW"
+- No changes to event callback logic or provider GUIDs
+- ControlTraceW and EVENT_TRACE_CONTROL_STOP already available via <evntrace.h>
