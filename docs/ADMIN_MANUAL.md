@@ -259,7 +259,7 @@ MSI 安装包适用于已编译好的部署场景。
 
 ```
 ============================================================
-      GuardianShield Control Panel  v2.0.0
+      GuardianShield Control Panel  v1.0.0
 ============================================================
 
   [1]  One-Click Build + Install + Start  (Full Deploy)
@@ -674,7 +674,7 @@ v2.0.0 的核心缺陷是一条 **事件放大级联链**，由三个独立缺�
 
 - `detection.rules` 配置节已废弃，由 `detection.event_responses` 取代（v3.0+）
 - `emergency.encrypt_timeout_seconds` 和 `emergency.recovery_wait_seconds` 仍为保留字段
-- `communication.*` 和 `keys.*` 配置节当前版本代码未解析，IPC 参数和加密算法为硬编码
+- `communication.*` 和 `keys.*` 配置节当前版本代码未解析，IPC 参数和加密算法为硬编码。 【注意】communication 和 keys 节在当前版本代码中未被解析，参见 guardian_config.yaml 中的注释
 - 文件类型过滤依赖 YAML 正确加载至 `config_cache.bin`；如过滤异常，检查日志中的启动诊断输出
 
 ---

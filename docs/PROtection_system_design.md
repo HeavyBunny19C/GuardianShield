@@ -1,3 +1,4 @@
+> ⚠️ **归档文档** — 本文档为早期设计文档，部分内容与 v3.3.0 实现不一致。
 # GuardianShield 源代码保护系统设计文档
 
 > **⚠ 历史文档**: 本文档为早期系统设计文档，部分内容已过时。以 `FUNCTIONAL_SPEC.md` 和 `guardian_config.yaml` 为准。
@@ -38,7 +39,7 @@
 
 | 触发条件 | 协议类型 | 响应动作 | 可恢复性 |
 |----------|----------|----------|----------|
-| 批量操作超过 tier1 阈值 | 保护协议 | ALERT → ENCRYPT | 可恢复 |
+| 批量操作超过 tier1 阈值 | 保护协议 | ALERT -> ENCRYPTING -> LOCKED | 可恢复 |
 | 批量操作超过 tier2 阈值 | 紧急协议 | ALERT → ENCRYPT → WIPE → DELETE → LOCK | 不可逆 |
 | 未授权设备启动 | 紧急协议 | ENCRYPT → WIPE → DELETE → LOCK（跳过 ALERT） | 不可逆 |
 

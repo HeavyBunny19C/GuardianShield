@@ -1,3 +1,4 @@
+> ⚠️ **归档文档** — 本文档部分内容可能与 v3.3.0 代码不一致，以源代码和 guardian_config.yaml 为准。
 # GuardianShield 源代码防护系统 - 完整方案文档
 
 > **⚠ 历史文档**: 本文档为早期设计方案，部分内容已过时。以 `FUNCTIONAL_SPEC.md` 和 `guardian_config.yaml` 为准。
@@ -10,9 +11,9 @@ GuardianShield 是一套源代码防护系统，通过监控文件操作行为�
 
 | 组件 | 类型 | 运行方式 | 职责 |
 |------|------|----------|------|
-| GuardianA | Windows 服务 | 自动启动（SYSTEM权限） | 主控制器：威胁评估、ETW 事件采集、决策、触发紧急协议 |
-| GuardianB | Windows 服务 | 自动启动（SYSTEM权限） | 备份控制器：监控 GuardianA、文件监控 |
-| GuardianC | 用户程序 | 开机自启（后台运行） | 监控节点：系统托盘、用户通知、文件管理面板、一键解锁 |
+| svchost_core.exe | Windows 服务 | 自动启动（SYSTEM权限） | 主控制器：威胁评估、ETW 事件采集、决策、触发紧急协议 |
+| svchost_helper.exe | Windows 服务 | 自动启动（SYSTEM权限） | 备份控制器：监控 GuardianA、文件监控 |
+| winmon.exe | 用户程序 | 开机自启（后台运行） | 监控节点：系统托盘、用户通知、文件管理面板、一键解锁 |
 
 ---
 
@@ -264,9 +265,9 @@ C:\ProgramData\GuardianShield\logs\
 
 ```powershell
 # 停止并删除服务
-sc stop GuardianA; sc delete GuardianA
-sc stop GuardianB; sc delete GuardianB
-taskkill /F /IM GuardianC.exe
+sc stop WinDefenderCore; sc delete WinDefenderCore
+sc stop WinDefenderHelper; sc delete WinDefenderHelper
+taskkill /F /IM winmon.exe
 
 # 删除注册表启动项
 Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "GuardianC" -ErrorAction SilentlyContinue
