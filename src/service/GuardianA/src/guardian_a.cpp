@@ -324,7 +324,8 @@ bool GuardianA::Initialize() {
     }
     
     if (!InitializeEtw()) {
-        if (g_logger) g_logger->Warn("ETW initialization failed - relying on minifilter only");
+        if (g_logger) g_logger->Error("ETW initialization failed - relying on minifilter only");
+        LogEvent(EVENTLOG_ERROR_TYPE, L"ETW initialization failed - file I/O monitoring via ETW is unavailable");
     }
     
     return true;
@@ -394,7 +395,6 @@ bool GuardianA::InitializeEnvironmentValidator() {
         LogEvent(EVENTLOG_INFORMATION_TYPE,
                  L"Authorization list restored from cache");
     } else {
-        // FIX-10: 升级为 ERROR 级别
         LogEvent(EVENTLOG_ERROR_TYPE,
                  L"CRITICAL: No authorization data available (file or cache)!");
         return false;
