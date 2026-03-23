@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GuardianShield MSI Installer - Main WiX Source
+  
+  功能:
+  1. 安装密钥验证（自定义安装界面）
+  2. 管理员选择 auth.list 和 guardian_config.yaml
+  3. 复制可执行文件到 Program Files
+  4. 复制配置文件到 ProgramData
+  5. 注册 Windows 服务 (WinDefenderCore / WinDefenderHelper)
+  6. 设置 GuardianC 注册表自启动
+  7. 创建日志目录
+  8. 卸载密钥验证
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <Product Id="*"
+           Name="GuardianShield"
+           Language="2052"
+           Version="3.3.0.0"
+           Manufacturer="GuardianShield"
+           UpgradeCode="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="GuardianShield 源代码保护系统"
+             Manufacturer="GuardianShield"
+             Platform="x64" />
+
+    <MajorUpgrade DowngradeErrorMessage="已安装更新版本的 GuardianShield。" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Properties for user input -->
+    <Property Id="INSTALL_KEY" Hidden="yes" Secure="yes" />
+    <Property Id="AUTH_LIST_PATH" Secure="yes" />
+    <Property Id="CONFIG_YAML_PATH" Secure="yes" />
+
+    <!-- Feature tree -->
+    <Feature Id="MainFeature" Title="GuardianShield" Level="1"
+             Description="源代码保护系统核心组件" AllowAdvertise="no">
+      <ComponentGroupRef Id="CoreExecutables" />
+      <ComponentGroupRef Id="ConfigFiles" />
+      <ComponentGroupRef Id="DataRootComponent" />
+      <ComponentGroupRef Id="LogDirectory" />
+      <ComponentGroupRef Id="GuardianCAutoStart" />
+    </Feature>
+
+    <!-- Install directory structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="GuardianShield" />
+      </Directory>
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="DATAROOTFOLDER" Name="GuardianShield">
+          <Directory Id="CONFIGFOLDER" Name="config" />
+          <Directory Id="LOGFOLDER" Name="logs" />
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!-- ============================== -->
+    <!-- Core executables               -->
+    <!-- ============================== -->
+    <ComponentGroup Id="CoreExecutables" Directory="INSTALLFOLDER">
+      <Component Id="GuardianA" Guid="11111111-1111-1111-1111-111111111111" Win64="yes">
+        <File Id="svchost_core.exe" Source="$(var.BuildOutputDir)\svchost_core.exe" KeyPath="yes" />
+        <ServiceInstall Id="WinDefenderCoreService"
+                        Type="ownProcess"
+                        Name="WinDefenderCore"
+                        DisplayName="Windows Defender Core Service"
+                        Description="系统核心安全监控服务"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal">
+          <ServiceDependency Id="Tcpip" />
+        </ServiceInstall>
+        <ServiceControl Id="StartWinDefenderCore"
+                        Name="WinDefenderCore"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+      <Component Id="GuardianB" Guid="22222222-2222-2222-2222-222222222222" Win64="yes">
+        <File Id="svchost_helper.exe" Source="$(var.BuildOutputDir)\svchost_helper.exe" KeyPath="yes" />
+        <ServiceInstall Id="WinDefenderHelperService"
+                        Type="ownProcess"
+                        Name="WinDefenderHelper"
+                        DisplayName="Windows Defender Helper Service"
+                        Description="系统辅助安全监控服务"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal">
+          <ServiceDependency Id="Tcpip" />
+        </ServiceInstall>
+        <ServiceControl Id="StartWinDefenderHelper"
+                        Name="WinDefenderHelper"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+      <Component Id="GuardianC" Guid="33333333-3333-3333-3333-333333333333" Win64="yes">
+        <File Id="winmon.exe" Source="$(var.BuildOutputDir)\winmon.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ============================== -->
+    <!-- Configuration files            -->
+    <!-- ============================== -->
+    <ComponentGroup Id="ConfigFiles" Directory="CONFIGFOLDER">
+      <Component Id="ConfigDir" Guid="44444444-4444-4444-4444-444444444444" Win64="yes" KeyPath="yes">
+        <CreateFolder>
+          <Permission User="SYSTEM" GenericAll="yes" />
+          <Permission User="Administrators" GenericAll="yes" />
+        </CreateFolder>
+        <RemoveFile Id="RemoveConfigWild" Name="*.*" On="uninstall" />
+        <RemoveFolder Id="RemoveConfigFolder" On="uninstall" />
+      </Component>
+      <Component Id="ConfigYamlFile" Guid="77777777-7777-7777-7777-777777777771" Win64="yes">
+        <File Id="guardian_config.yaml" Source="$(var.BuildOutputDir)\guardian_config.yaml"
+              Name="guardian_config.yaml" KeyPath="yes" />
+      </Component>
+      <Component Id="AuthListFile" Guid="77777777-7777-7777-7777-777777777772" Win64="yes">
+        <File Id="auth.list" Source="$(var.BuildOutputDir)\auth.list"
+              Name="auth.list" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Config cache lives in ProgramData\GuardianShield\config_cache.bin (see Config::GetCachePath()) -->
+    <ComponentGroup Id="DataRootComponent" Directory="DATAROOTFOLDER">
+      <Component Id="DataRootDir" Guid="55555555-5555-5555-5555-555555555555" Win64="yes" KeyPath="yes">
+        <CreateFolder>
+          <Permission User="SYSTEM" GenericAll="yes" />
+          <Permission User="Administrators" GenericAll="yes" />
+        </CreateFolder>
+        <RemoveFile Id="RemoveConfigCache" Name="config_cache.bin" On="uninstall" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ============================== -->
+    <!-- Log directory                  -->
+    <!-- ============================== -->
+    <ComponentGroup Id="LogDirectory" Directory="LOGFOLDER">
+      <Component Id="LogDir" Guid="66666666-6666-6666-6666-666666666666" Win64="yes" KeyPath="yes">
+        <CreateFolder>
+          <Permission User="SYSTEM" GenericAll="yes" />
+          <Permission User="Administrators" GenericAll="yes" />
+        </CreateFolder>
+        <RemoveFile Id="RemoveLogWild" Name="*.*" On="uninstall" />
+        <RemoveFolder Id="RemoveLogFolder" On="uninstall" />
+      </Component>
+    </ComponentGroup>
+
+
+    <!-- ============================== -->
+    <!-- GuardianC auto-start registry  -->
+    <!-- ============================== -->
+    <ComponentGroup Id="GuardianCAutoStart" Directory="INSTALLFOLDER">
+      <Component Id="GuardianCReg" Guid="99999999-9999-9999-9999-999999999999" Win64="yes">
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+                       Name="WindowsMonitor"
+                       Type="string"
+                       Value="[INSTALLFOLDER]winmon.exe --silent"
+                       KeyPath="yes" />
+        <RemoveRegistryValue Root="HKCU"
+                             Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+                             Name="GuardianC" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ============================== -->
+    <!-- Custom Actions                 -->
+    <!-- ============================== -->
+    
+    <!-- ============================== -->
+    <!-- Custom Action Binary          -->
+    <!-- ============================== -->
+    <Binary Id="GuardianCA" SourceFile="$(var.BuildOutputDir)\guardian_ca.dll" />
+
+    <!-- Auto-detect config files next to the MSI (immediate, UI phase) -->
+    <CustomAction Id="CA_LocateConfigFiles"
+                  BinaryKey="GuardianCA"
+                  DllEntry="LocateConfigFiles"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Browse for auth.list (immediate, triggered by dialog button) -->
+    <CustomAction Id="CA_BrowseAuthList"
+                  BinaryKey="GuardianCA"
+                  DllEntry="BrowseAuthList"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Browse for guardian_config.yaml (immediate, triggered by dialog button) -->
+    <CustomAction Id="CA_BrowseConfigYaml"
+                  BinaryKey="GuardianCA"
+                  DllEntry="BrowseConfigYaml"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Install key validation (immediate, UI phase) -->
+    <CustomAction Id="CA_ValidateInstallKey"
+                  BinaryKey="GuardianCA"
+                  DllEntry="ValidateInstallKey"
+                  Execute="immediate"
+                  Return="check" />
+
+    <!-- Set default install key for MajorUpgrade compatibility (Approach B) -->
+    <CustomAction Id="CA_SetDefaultKey" Property="INSTALL_KEY" Value="GuardianShield2026!" />
+
+    <!-- Backup/restore config_cache.bin across MajorUpgrade -->
+    <CustomAction Id="CA_BackupConfigCache"
+                  BinaryKey="GuardianCA"
+                  DllEntry="BackupConfigCache"
+                  Execute="immediate"
+                  Return="ignore" />
+    <CustomAction Id="CA_RestoreConfigCache"
+                  BinaryKey="GuardianCA"
+                  DllEntry="RestoreConfigCache"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Uninstall key validation (immediate, UI phase) -->
+    <CustomAction Id="CA_ValidateUninstallKey"
+                  BinaryKey="GuardianCA"
+                  DllEntry="ValidateInstallKey"
+                  Execute="immediate"
+                  Return="check" />
+
+    <!-- Set CustomActionData for deferred CopyConfigFiles: "AUTH_LIST_PATH|CONFIG_YAML_PATH" -->
+    <CustomAction Id="CA_SetCopyConfigData"
+                  Property="CA_CopyConfigFiles"
+                  Value="[AUTH_LIST_PATH]|[CONFIG_YAML_PATH]"
+                  Execute="immediate"
+                  Return="check" />
+
+    <!-- Copy config files (deferred, elevated, runs in system context) -->
+    <CustomAction Id="CA_CopyConfigFiles"
+                  BinaryKey="GuardianCA"
+                  DllEntry="CopyConfigFiles"
+                  Execute="deferred"
+                  Return="check"
+                  Impersonate="no" />
+
+    <!-- Install sequence -->
+    <InstallExecuteSequence>
+      <Custom Action="CA_BackupConfigCache" Before="CA_SetDefaultKey">
+        NOT Installed
+      </Custom>
+      <Custom Action="CA_SetDefaultKey" Before="RemoveExistingProducts">
+        NOT Installed
+      </Custom>
+      <Custom Action="CA_RestoreConfigCache" After="RemoveExistingProducts">
+        NOT Installed
+      </Custom>
+      <Custom Action="CA_SetCopyConfigData" After="InstallInitialize">
+        NOT Installed
+      </Custom>
+      <Custom Action="CA_CopyConfigFiles" After="CA_SetCopyConfigData">
+        NOT Installed
+      </Custom>
+      <Custom Action="CA_ValidateUninstallKey" Before="RemoveFiles">
+        Installed AND REMOVE="ALL"
+      </Custom>
+    </InstallExecuteSequence>
+
+    <!-- UI Reference -->
+    <UIRef Id="GuardianInstallUI" />
+
+  </Product>
+</Wix>

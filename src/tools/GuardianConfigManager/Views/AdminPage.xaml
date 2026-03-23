@@ -1,0 +1,59 @@
+<UserControl x:Class="GuardianConfigManager.Views.AdminPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="管理员设置" Style="{StaticResource SectionHeader}"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="密码哈希" Style="{StaticResource FieldLabel}"/>
+                <Grid Grid.Row="0" Grid.Column="1" Margin="0,4,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding Config.Admin.PasswordHash, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,0"/>
+                    <Button Grid.Column="1" Content="生成" Command="{Binding GeneratePasswordHashCommand}"
+                            Style="{StaticResource PrimaryButton}"/>
+                </Grid>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="安装密钥哈希" Style="{StaticResource FieldLabel}"/>
+                <Grid Grid.Row="1" Grid.Column="1" Margin="0,4,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding Config.Admin.InstallKeyHash, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,0"/>
+                    <Button Grid.Column="1" Content="生成" Command="{Binding GenerateKeyHashCommand}"
+                            Style="{StaticResource PrimaryButton}"/>
+                </Grid>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="解锁超时 (秒)" Style="{StaticResource FieldLabel}"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.Admin.UnlockTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,4,0,8"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="哈希值可通过点击「生成」按钮，输入密码或密钥后自动计算 SHA-256 得到。"
+                         Foreground="#5F6368" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

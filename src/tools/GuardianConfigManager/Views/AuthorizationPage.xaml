@@ -1,0 +1,40 @@
+<UserControl x:Class="GuardianConfigManager.Views.AuthorizationPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="环境授权设置" Style="{StaticResource SectionHeader}"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="授权清单路径" Style="{StaticResource FieldLabel}"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.Authorization.ListPath, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,4,0,8"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="启动时检查" Style="{StaticResource FieldLabel}"/>
+                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Config.Authorization.CheckOnBoot}"
+                          Content="每次启动时校验环境 (IP/MAC)"
+                          VerticalAlignment="Center" Margin="0,4,0,8"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="严格模式" Style="{StaticResource FieldLabel}"/>
+                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Config.Authorization.StrictMode}"
+                          Content="未授权设备触发紧急协议"
+                          VerticalAlignment="Center" Margin="0,4,0,8"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

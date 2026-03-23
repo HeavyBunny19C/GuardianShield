@@ -1,0 +1,2 @@
+build0  v2.0.0.0  2026-03-06  GuardianShield_build0_v2.0.0.0.msi  stable - interactive test v2.5 baseline
+build1  v2.1.0.0  2026-03-09  GuardianShield_build1.msi           BUG-10/4/12/11/5 fixes, MSI archive infrastructure

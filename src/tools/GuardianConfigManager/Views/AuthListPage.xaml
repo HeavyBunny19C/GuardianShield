@@ -1,0 +1,46 @@
+<UserControl x:Class="GuardianConfigManager.Views.AuthListPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="授权清单" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="格式: IP地址,MAC地址,备注 | 支持通配符: * 表示任意匹配"
+                       Style="{StaticResource FieldLabel}" Foreground="#5F6368" FontSize="12" Margin="0,0,0,12"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="添加" Command="{Binding AddAuthEntryCommand}"
+                    Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+            <Button Content="移除" Command="{Binding RemoveAuthEntryCommand}"
+                    CommandParameter="{Binding SelectedItem, ElementName=AuthDataGrid}"
+                    Style="{StaticResource PrimaryButton}"/>
+        </StackPanel>
+
+        <DataGrid x:Name="AuthDataGrid"
+                  Grid.Row="2"
+                  ItemsSource="{Binding AuthEntries}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  BorderBrush="#E0E0E0" BorderThickness="1"
+                  RowHeaderWidth="0"
+                  MinHeight="200">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="IP 地址" Binding="{Binding Ip, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="*" MinWidth="120"/>
+                <DataGridTextColumn Header="MAC 地址" Binding="{Binding Mac, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="*" MinWidth="140"/>
+                <DataGridTextColumn Header="备注" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="*" MinWidth="150"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

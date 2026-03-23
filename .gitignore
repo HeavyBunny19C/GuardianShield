@@ -1,0 +1,49 @@
+# Build output
+build/
+out/
+
+# .NET / GuardianConfigManager
+src/tools/GuardianConfigManager/obj/
+src/tools/GuardianConfigManager/bin/
+
+# Visual Studio / IDE
+.vs/
+*.suo
+*.user
+*.sdf
+ipch/
+*.aps
+*.ncb
+*.opensdf
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+
+# Compiled objects
+*.obj
+*.o
+*.lib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.wixobj
+*.wixpdb
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Temp / logs
+*.tmp
+*.log
+*.bak
+
+# Secrets
+config/default.txt
+
+# IDE extensions
+.specstory/

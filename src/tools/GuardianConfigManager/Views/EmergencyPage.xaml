@@ -1,0 +1,83 @@
+<UserControl x:Class="GuardianConfigManager.Views.EmergencyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:GuardianConfigManager.Views">
+    <UserControl.Resources>
+        <local:ListToStringConverter x:Key="ListToStringConverter"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="紧急协议" Style="{StaticResource SectionHeader}"/>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="加密超时 (秒)" Style="{StaticResource FieldLabel}"/>
+                <TextBox Grid.Row="0" Grid.Column="1"
+                         Text="{Binding Config.Emergency.EncryptTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,4,0,8"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="恢复等待 (秒)" Style="{StaticResource FieldLabel}"/>
+                <TextBox Grid.Row="1" Grid.Column="1"
+                         Text="{Binding Config.Emergency.RecoveryWaitSeconds, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,4,0,8"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="擦除方法" Style="{StaticResource FieldLabel}"/>
+                <ComboBox Grid.Row="2" Grid.Column="1"
+                          SelectedValue="{Binding Config.Emergency.WipeMethod}"
+                          SelectedValuePath="Content"
+                          Margin="0,4,0,8">
+                    <ComboBoxItem Content="DOD_5220"/>
+                    <ComboBoxItem Content="GUTMANN"/>
+                    <ComboBoxItem Content="SIMPLE"/>
+                </ComboBox>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="通知渠道" Style="{StaticResource FieldLabel}" FontWeight="SemiBold"/>
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                <Button Content="添加" Command="{Binding AddNotificationCommand}"
+                        Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                <Button Content="移除" Command="{Binding RemoveNotificationCommand}"
+                        CommandParameter="{Binding SelectedItem, ElementName=NotificationList}"
+                        Style="{StaticResource PrimaryButton}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Margin="0,0,0,8">
+            <ListBox x:Name="NotificationList"
+                     ItemsSource="{Binding Config.Emergency.Notifications}"
+                     BorderThickness="0" Padding="12,8"
+                     MinHeight="120" MaxHeight="200">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,4">
+                            <TextBlock FontWeight="SemiBold">
+                                <Run Text="类型: "/><Run Text="{Binding Type}"/>
+                            </TextBlock>
+                            <TextBlock Foreground="#5F6368">
+                                <Run Text="收件人: "/>
+                                <Run Text="{Binding Recipients, Converter={StaticResource ListToStringConverter}}"/>
+                            </TextBlock>
+                            <TextBlock Foreground="#5F6368">
+                                <Run Text="URL: "/><Run Text="{Binding Url}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+    </Grid>
+</UserControl>

@@ -1,0 +1,82 @@
+<UserControl x:Class="GuardianConfigManager.Views.ProtectionPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+>
+    <UserControl.Resources>
+        <x:Array x:Key="PriorityValues" Type="sys:String" xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+            <sys:String>HIGH</sys:String>
+            <sys:String>MEDIUM</sys:String>
+            <sys:String>LOW</sys:String>
+        </x:Array>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="保护目录" Style="{StaticResource SectionHeader}"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <DataGrid x:Name="DirectoriesGrid" Grid.Column="0"
+                      ItemsSource="{Binding Config.Protection.Directories}"
+                      AutoGenerateColumns="False" CanUserAddRows="False"
+                      CanUserDeleteRows="False" IsReadOnly="False"
+                      Margin="0,0,8,0" MinHeight="120" MaxHeight="200"
+                      GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                      BorderBrush="#DADCE0" BorderThickness="1">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Path" Binding="{Binding Path, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="*" MinWidth="200"/>
+                    <DataGridCheckBoxColumn Header="Recursive" Binding="{Binding Recursive}"
+                                            Width="80"/>
+                    <DataGridTemplateColumn Header="Priority" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox SelectedValue="{Binding Priority, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{StaticResource PriorityValues}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Top">
+                <Button Content="添加" Command="{Binding AddProtectedDirCommand}"
+                        Style="{StaticResource PrimaryButton}" Margin="0,0,0,8"/>
+                <Button Content="移除" Command="{Binding RemoveProtectedDirCommand}"
+                        CommandParameter="{Binding SelectedItem, ElementName=DirectoriesGrid}"
+                        Style="{StaticResource PrimaryButton}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- File Types Section -->
+        <TextBlock Grid.Row="2" Text="文件类型过滤" Style="{StaticResource SectionHeader}"
+                   Margin="0,16,0,0"/>
+
+        <Grid Grid.Row="3" Margin="0,0,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Grid.Column="0" Header="Include（包含）" Padding="12,8">
+                <ListBox ItemsSource="{Binding Config.Protection.FileTypes.Include}"
+                         BorderThickness="0" Background="Transparent"
+                         MinHeight="80"/>
+            </GroupBox>
+
+            <GroupBox Grid.Column="2" Header="Exclude（排除）" Padding="12,8">
+                <ListBox ItemsSource="{Binding Config.Protection.FileTypes.Exclude}"
+                         BorderThickness="0" Background="Transparent"
+                         MinHeight="80"/>
+            </GroupBox>
+        </Grid>
+    </Grid>
+</UserControl>

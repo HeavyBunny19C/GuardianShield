@@ -1,0 +1,38 @@
+<UserControl x:Class="GuardianConfigManager.Views.WhitelistPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="进程白名单" Style="{StaticResource SectionHeader}"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+            <Button Content="添加" Command="{Binding AddWhitelistCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+            <Button Content="移除" Command="{Binding RemoveWhitelistCommand}" Style="{StaticResource PrimaryButton}"
+                    CommandParameter="{Binding SelectedItem, ElementName=ProcessGrid}"/>
+        </StackPanel>
+
+        <DataGrid x:Name="ProcessGrid" Grid.Row="2"
+                  ItemsSource="{Binding Config.Whitelist.Processes}"
+                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                  HeadersVisibility="Column" BorderThickness="1" BorderBrush="#DADCE0"
+                  GridLinesVisibility="Horizontal" RowHeight="32">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="名称" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="140"/>
+                <DataGridTextColumn Header="描述" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTemplateColumn Header="权限 (逗号分隔)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Permissions, Converter={StaticResource ListToCommaConverter}, UpdateSourceTrigger=PropertyChanged}"
+                                     BorderThickness="0" Background="Transparent" Padding="4,2"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

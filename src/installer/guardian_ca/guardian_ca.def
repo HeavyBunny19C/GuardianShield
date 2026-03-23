@@ -1,0 +1,9 @@
+LIBRARY guardian_ca
+EXPORTS
+    ValidateInstallKey
+    CopyConfigFiles
+    LocateConfigFiles
+    BrowseAuthList
+    BrowseConfigYaml
+    BackupConfigCache
+    RestoreConfigCache

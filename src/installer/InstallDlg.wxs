@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GuardianShield - 自定义安装界面
+  
+  包含:
+  1. 欢迎页
+  2. 密钥验证页
+  3. 配置文件选择页 (auth.list + guardian_config.yaml)
+  4. 安装路径选择页
+  5. 确认安装页
+  6. 卸载密钥输入页
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <UI Id="GuardianInstallUI">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Microsoft YaHei" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Microsoft YaHei" Size="12" Bold="yes" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Microsoft YaHei" Size="9" Bold="yes" />
+
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+
+      <!-- ============================== -->
+      <!-- Welcome Dialog                 -->
+      <!-- ============================== -->
+      <Dialog Id="GS_WelcomeDlg" Width="370" Height="270" Title="GuardianShield 安装向导">
+        <Control Id="Title" Type="Text" X="20" Y="20" Width="330" Height="40"
+                 Text="{\WixUI_Font_Bigger}欢迎使用 GuardianShield 安装向导" />
+        <Control Id="Description" Type="Text" X="20" Y="70" Width="330" Height="40"
+                 Text="此向导将引导您完成 GuardianShield 源代码保护系统的安装。\n\n请确保您具有管理员权限。" />
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="下一步">
+          <Publish Event="NewDialog" Value="GS_VerifyReadyDlg">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
+          <Publish Event="SpawnDialog" Value="GS_CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- ============================== -->
+      <!-- Install Key Dialog             -->
+      <!-- ============================== -->
+      <Dialog Id="InstallKeyDlg" Width="370" Height="270" Title="GuardianShield - 安装密钥验证">
+        <Control Id="Title" Type="Text" X="20" Y="20" Width="330" Height="20"
+                 Text="{\WixUI_Font_Title}请输入管理员安装密钥" />
+        <Control Id="Description" Type="Text" X="20" Y="50" Width="330" Height="20"
+                 Text="安装 GuardianShield 需要管理员提供有效的安装密钥。" />
+        <Control Id="KeyLabel" Type="Text" X="20" Y="90" Width="80" Height="17" Text="安装密钥:" />
+        <Control Id="KeyEdit" Type="Edit" X="100" Y="88" Width="250" Height="18"
+                 Property="INSTALL_KEY" Password="yes" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="上一步">
+          <Publish Event="NewDialog" Value="GS_WelcomeDlg">1</Publish>
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="下一步">
+          <Publish Event="DoAction" Value="CA_ValidateInstallKey">1</Publish>
+          <Publish Event="NewDialog" Value="ConfigSelectDlg">INSTALL_KEY</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
+          <Publish Event="SpawnDialog" Value="GS_CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- ============================== -->
+      <!-- Config File Selection Dialog   -->
+      <!-- ============================== -->
+      <Dialog Id="ConfigSelectDlg" Width="370" Height="270" Title="GuardianShield - 选择配置文件">
+        <Control Id="Title" Type="Text" X="20" Y="20" Width="330" Height="20"
+                 Text="{\WixUI_Font_Title}选择配置文件" />
+        <Control Id="Description" Type="Text" X="20" Y="50" Width="330" Height="30"
+                 Text="系统已自动检测默认配置文件路径，您也可以手动输入或点击浏览选择。\n留空则跳过（可安装后手动复制到 ProgramData 目录）。" />
+
+        <Control Id="AuthListLabel" Type="Text" X="20" Y="100" Width="330" Height="17" Text="授权清单 (auth.list) 完整路径:" />
+        <Control Id="AuthListPath" Type="Edit" X="20" Y="117" Width="260" Height="18"
+                 Property="AUTH_LIST_PATH" />
+        <Control Id="BrowseAuth" Type="PushButton" X="285" Y="116" Width="65" Height="20" Text="浏览...">
+          <Publish Event="DoAction" Value="CA_BrowseAuthList">1</Publish>
+        </Control>
+
+        <Control Id="ConfigLabel" Type="Text" X="20" Y="150" Width="330" Height="17" Text="配置文件 (guardian_config.yaml) 完整路径:" />
+        <Control Id="ConfigPath" Type="Edit" X="20" Y="167" Width="260" Height="18"
+                 Property="CONFIG_YAML_PATH" />
+        <Control Id="BrowseConfig" Type="PushButton" X="285" Y="166" Width="65" Height="20" Text="浏览...">
+          <Publish Event="DoAction" Value="CA_BrowseConfigYaml">1</Publish>
+        </Control>
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="上一步">
+          <Publish Event="NewDialog" Value="InstallKeyDlg">1</Publish>
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="下一步">
+          <Publish Event="NewDialog" Value="GS_VerifyReadyDlg">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
+          <Publish Event="SpawnDialog" Value="GS_CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- ============================== -->
+      <!-- Ready to Install Dialog        -->
+      <!-- ============================== -->
+      <Dialog Id="GS_VerifyReadyDlg" Width="370" Height="270" Title="GuardianShield - 准备安装">
+        <Control Id="Title" Type="Text" X="20" Y="20" Width="330" Height="20"
+                 Text="{\WixUI_Font_Title}准备安装 GuardianShield" />
+        <Control Id="Description" Type="Text" X="20" Y="50" Width="330" Height="80"
+                 Text="安装程序将执行以下操作:\n\n- 安装 GuardianShield 核心组件\n- 复制配置文件到系统目录\n- 注册 WinDefenderCore 和 WinDefenderHelper 服务\n- 设置 WindowsMonitor 自启动\n- 创建日志目录\n\n点击 安装 按钮开始安装。" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="上一步">
+          <Publish Event="NewDialog" Value="GS_WelcomeDlg">1</Publish>
+        </Control>
+        <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="安装">
+          <Publish Event="EndDialog" Value="Return">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
+          <Publish Event="SpawnDialog" Value="GS_CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- ============================== -->
+      <!-- Cancel confirmation            -->
+      <!-- ============================== -->
+      <Dialog Id="GS_CancelDlg" Width="260" Height="85" Title="GuardianShield">
+        <Control Id="Text" Type="Text" X="48" Y="15" Width="194" Height="30"
+                 Text="确定要取消 GuardianShield 安装吗？" />
+        <Control Id="Yes" Type="PushButton" X="72" Y="57" Width="56" Height="17" Text="是">
+          <Publish Event="EndDialog" Value="Exit">1</Publish>
+        </Control>
+        <Control Id="No" Type="PushButton" X="132" Y="57" Width="56" Height="17" Default="yes" Cancel="yes" Text="否">
+          <Publish Event="EndDialog" Value="Return">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- ============================== -->
+      <!-- Uninstall Key Dialog           -->
+      <!-- ============================== -->
+      <Dialog Id="UninstallKeyDlg" Width="370" Height="270" Title="GuardianShield - 卸载验证">
+        <Control Id="Title" Type="Text" X="20" Y="20" Width="330" Height="20"
+                 Text="{\WixUI_Font_Title}请输入管理员密钥以卸载" />
+        <Control Id="Description" Type="Text" X="20" Y="50" Width="330" Height="20"
+                 Text="卸载 GuardianShield 需要管理员提供有效的安装密钥。" />
+        <Control Id="KeyLabel" Type="Text" X="20" Y="90" Width="80" Height="17" Text="管理员密钥:" />
+        <Control Id="KeyEdit" Type="Edit" X="100" Y="88" Width="250" Height="18"
+                 Property="INSTALL_KEY" Password="yes" />
+        <Control Id="OK" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="确认">
+          <Publish Event="DoAction" Value="CA_ValidateUninstallKey">1</Publish>
+          <Publish Event="EndDialog" Value="Return">INSTALL_KEY</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
+          <Publish Event="EndDialog" Value="Exit">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- Dialog sequencing -->
+      <InstallUISequence>
+        <Show Dialog="GS_WelcomeDlg" Before="ExecuteAction">NOT Installed</Show>
+        <Show Dialog="UninstallKeyDlg" Before="ExecuteAction">Installed AND REMOVE="ALL"</Show>
+      </InstallUISequence>
+
+      <!-- Standard dialogs (progress, error) -->
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="FilesInUse" />
+
+    </UI>
+  </Fragment>
+</Wix>
