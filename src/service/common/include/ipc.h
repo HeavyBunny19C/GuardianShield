@@ -45,6 +45,7 @@ bool DeserializeMessage(const uint8_t* data, size_t size, MessageHeader& header,
  * @brief Calculate message checksum (HMAC-SHA256 truncated)
  */
 bool CalculateChecksum(const MessageHeader& header, const void* payload, uint8_t* checksumOut);
+bool VerifyChecksum(const MessageHeader& header, const void* payload);
 
 // ============================================
 // Named Pipe Communication
