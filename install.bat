@@ -55,6 +55,7 @@ if /i "%~1"=="/key"       ( set "KEY=%~2"       & shift & shift & goto :parse_ar
 if /i "%~1"=="/config"    ( set "CUSTOM_CONFIG=%~2" & shift & shift & goto :parse_args )
 if /i "%~1"=="/auth"      ( set "CUSTOM_AUTH=%~2"   & shift & shift & goto :parse_args )
 echo [ERROR] Unknown parameter: %~1
+pause
 exit /b 1
 
 :args_done
@@ -71,6 +72,7 @@ if "%CMD%"=="" (
     echo    install.bat /stop
     echo    install.bat /status
     echo.
+    pause
     exit /b 1
 )
 
@@ -246,6 +248,7 @@ echo    Data dir:     %DATA_DIR%
 echo    Log dir:      %LOG_DIR%
 echo  ============================================================
 echo.
+pause
 exit /b 0
 
 REM ============================================================
@@ -363,6 +366,7 @@ if "%HAS_WARN%"=="1" (
     echo  ============================================================
 )
 echo.
+pause
 exit /b 0
 
 REM ============================================================
@@ -386,6 +390,7 @@ ping -n 2 127.0.0.1 >nul
 echo  Starting GuardianC...
 start "" "%INSTALL_DIR%\%GC_NAME%" --silent
 echo  [OK] All services started.
+pause
 exit /b 0
 
 REM ============================================================
@@ -403,6 +408,7 @@ echo  Stopping GuardianC...
 taskkill /F /IM %GC_NAME% >nul 2>&1
 ping -n 3 127.0.0.1 >nul
 echo  [OK] All services stopped.
+pause
 exit /b 0
 
 REM ============================================================
@@ -474,6 +480,7 @@ if exist "%LOG_DIR%" (
 )
 
 echo.
+pause
 exit /b 0
 
 REM ============================================================
@@ -484,6 +491,7 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] This operation requires Administrator privileges.
     echo         Right-click Command Prompt ^> "Run as administrator"
+    pause
     exit /b 2
 )
 exit /b 0
