@@ -1,0 +1,84 @@
+name: GuardianShield Build & Test
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON -DBUILD_TOOLS=ON
+
+      - name: Build Release
+        run: cmake --build build --config Release
+
+      - name: Check Warnings
+        shell: pwsh
+        run: |
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
+          $warnings = Select-String -Path build.log -Pattern "warning C\d+"
+          if ($warnings.Count -gt 0) {
+            Write-Host "::warning::Found $($warnings.Count) compiler warnings"
+            $warnings | ForEach-Object { Write-Host $_.Line }
+          } else {
+            Write-Host "Zero compiler warnings"
+          }
+
+      - name: Run Tests
+        run: ctest --test-dir build --config Release --output-on-failure --verbose
+
+      - name: Security Checks
+        shell: pwsh
+        run: |
+          Write-Host "=== Security Verification ==="
+
+          $hmacKey = Select-String -Path "src/service/common/src/ipc.cpp" -Pattern "GuardianShield_IPC_v2"
+          if ($hmacKey) { Write-Host "::error::HMAC hardcoded key still present!"; exit 1 }
+          else { Write-Host "[PASS] Hardcoded HMAC key removed" }
+
+          $mutexA = Select-String -Path "src/service/GuardianA/src/guardian_a.cpp" -Pattern "GuardianShield-Leader"
+          if (-not $mutexA) { Write-Host "::error::Global mutex missing in GuardianA!"; exit 1 }
+          else { Write-Host "[PASS] Global mutex in GuardianA" }
+
+          $mutexB = Select-String -Path "src/service/GuardianB/src/guardian_b.cpp" -Pattern "GuardianShield-Leader"
+          if (-not $mutexB) { Write-Host "::error::Global mutex missing in GuardianB!"; exit 1 }
+          else { Write-Host "[PASS] Global mutex in GuardianB" }
+
+          $etw = Select-String -Path "src/service/GuardianA/src/guardian_a.cpp" -Pattern "ERROR_ALREADY_EXISTS"
+          if (-not $etw) { Write-Host "::error::ETW orphan recovery missing!"; exit 1 }
+          else { Write-Host "[PASS] ETW orphan recovery" }
+
+          $sha = Select-String -Path "src/service/common/src/security.cpp" -Pattern "BCryptCreateHash"
+          if (-not $sha) { Write-Host "::error::SHA256File not implemented!"; exit 1 }
+          else { Write-Host "[PASS] SHA256File implemented" }
+
+          Write-Host "=== All security checks passed ==="
+
+      - name: Upload Build Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardianshield-v3.3.0-win64
+          path: |
+            build/src/service/GuardianA/Release/svchost_core.exe
+            build/src/service/GuardianB/Release/svchost_helper.exe
+            build/src/service/GuardianC/Release/winmon.exe
+          retention-days: 30
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/Testing/
+          retention-days: 7
