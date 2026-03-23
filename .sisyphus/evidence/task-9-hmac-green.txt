@@ -1,0 +1,48 @@
+Task: Fix HMAC zero-checksum bypass + machine-specific key derivation
+Date: 2026-03-23
+
+Modified files:
+- src/service/common/src/ipc.cpp
+- src/service/common/include/ipc.h
+
+Implemented changes:
+1) CalculateChecksum failure behavior
+   - Signature changed to: bool CalculateChecksum(...)
+   - On key-derivation/HMAC failure: returns false
+   - Removed failure path that wrote all-zero checksum bytes
+
+2) VerifyChecksum all-zero rejection
+   - Added explicit pre-check: if header.checksum is all zeros -> return false
+   - Added CalculateChecksum(...) return-value check; if false -> return false
+
+3) Hardcoded key replacement
+   - Removed hardcoded key "GuardianShield_IPC_v2"
+   - Added GetMachineKey(std::vector<uint8_t>&)
+   - Derives deterministic machine-specific key by:
+     a) machine SID (LookupAccountNameW + ConvertSidToStringSidW), fallback to
+     b) HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid
+   - Appends salt "GuardianShield-IPC-Key-v3" and hashes with SHA-256 (32-byte HMAC key)
+
+Callsite hardening:
+- SerializeMessage: returns empty buffer if CalculateChecksum fails
+- IpcManager::SendToNode: returns false if CalculateChecksum fails
+
+Verification attempts (environment constraints):
+1) ctest -R ZeroChecksumBypassDetection --output-on-failure
+   -> zsh: command not found: ctest
+
+2) ./GuardianTests.exe --gtest_filter=HMACSecurityTest.ZeroChecksumBypassDetection
+   (workdir: build/test/Release)
+   -> zsh: exec format error: ./GuardianTests.exe
+
+3) cmake --build . --target GuardianTests
+   (workdir: build)
+   -> zsh: command not found: cmake
+
+LSP diagnostics run on changed files:
+- src/service/common/src/ipc.cpp: unresolved include/path issues in current macOS environment
+- src/service/common/include/ipc.h: Windows HANDLE/SOCKET unknown in current macOS environment
+
+Conclusion:
+- Code changes for task requirements are implemented in ipc.cpp/ipc.h.
+- Runtime test execution/build verification is blocked in this environment (missing cmake/ctest and Windows-only test binary).
