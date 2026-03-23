@@ -43,6 +43,12 @@ bool DeserializeMessage(const uint8_t* data, size_t size, MessageHeader& header,
 
 /**
  * @brief Calculate message checksum (HMAC-SHA256 truncated)
+ * 
+ * Security Hardening (V1):
+ * - Key is derived from machine identity (SID or MachineGuid + salt), NOT hardcoded.
+ * - VerifyChecksum rejects all-zero checksums as invalid.
+ * - TCP channel binds to loopback only; accept() validates peer via getpeername.
+ * - Note: TCP is NOT initialized by IpcManager; only Named Pipe and Shared Memory are active.
  */
 bool CalculateChecksum(const MessageHeader& header, const void* payload, uint8_t* checksumOut);
 bool VerifyChecksum(const MessageHeader& header, const void* payload);

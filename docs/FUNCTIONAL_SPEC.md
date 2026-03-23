@@ -390,7 +390,9 @@ C:\ProgramData\GuardianShield\
 |------|------|
 | 算法 | HMAC-SHA256，截断至 12 字节 |
 | 校验范围 | 所有 IPC 消息（Named Pipe / Shared Memory / TCP） |
-| 密钥来源 | 编译时内置共享密钥 |
+| 密钥来源 | 基于机器 SID 或 MachineGuid 注册表值结合固定盐值派生，非硬编码 |
+| 安全增强 | VerifyChecksum 显式拒绝全零校验和；TCP 仅监听 127.0.0.1 并通过 getpeername 验证对端 |
+| 部署状态 | IpcManager 仅启用 Named Pipe 和 Shared Memory；TCP 通道已定义但未初始化；TLS 推迟至 V2 |
 | 实现文件 | `src/service/common/src/ipc.cpp` |
 
 ### 8.3 ObRegisterCallbacks 内核级进程保护
