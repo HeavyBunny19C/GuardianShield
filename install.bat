@@ -60,20 +60,11 @@ exit /b 1
 
 :args_done
 if "%CMD%"=="" (
-    echo.
-    echo  GuardianShield Installer v1.0
-    echo  ============================================================
-    echo.
-    echo  Usage:
-    echo    install.bat /install /key ^<密钥^>
-    echo    install.bat /install /key ^<密钥^> /config ^<yaml路径^> /auth ^<auth.list路径^>
-    echo    install.bat /uninstall /key ^<密钥^>
-    echo    install.bat /start
-    echo    install.bat /stop
-    echo    install.bat /status
-    echo.
-    pause
-    exit /b 1
+    REM ============================================================
+    REM  Interactive Mode (double-click or no args)
+    REM ============================================================
+    call :interactive_menu
+    exit /b %errorlevel%
 )
 
 REM ============================================================
@@ -484,13 +475,101 @@ pause
 exit /b 0
 
 REM ============================================================
+REM  Helper: Interactive Menu (for double-click execution)
+REM ============================================================
+:interactive_menu
+echo.
+echo  ============================================================
+echo        GuardianShield Installer v1.0
+echo        Interactive Mode
+echo  ============================================================
+echo.
+echo  Please select an operation:
+echo    [1] Install GuardianShield
+echo    [2] Uninstall GuardianShield
+echo    [3] Start services
+echo    [4] Stop services
+echo    [5] Check status
+echo    [6] Exit
+echo.
+set /p "CHOICE=Enter choice (1-6): "
+
+if "%CHOICE%"=="1" goto :interactive_install
+if "%CHOICE%"=="2" goto :interactive_uninstall
+if "%CHOICE%"=="3" goto :interactive_start
+if "%CHOICE%"=="4" goto :interactive_stop
+if "%CHOICE%"=="5" goto :interactive_status
+if "%CHOICE%"=="6" exit /b 0
+
+echo [ERROR] Invalid choice. Please enter 1-6.
+pause
+goto :interactive_menu
+
+:interactive_install
+call :check_admin
+if %errorlevel% neq 0 goto :interactive_menu
+
+echo.
+echo  --- Installation ---
+echo  A valid installation key is required.
+echo.
+set /p "INTERACTIVE_KEY=Enter installation key: "
+if "%INTERACTIVE_KEY%"=="" (
+    echo [ERROR] Key cannot be empty.
+    pause
+    goto :interactive_menu
+)
+set "CMD=install"
+set "KEY=%INTERACTIVE_KEY%"
+goto :cmd_install
+
+:interactive_uninstall
+call :check_admin
+if %errorlevel% neq 0 goto :interactive_menu
+
+echo.
+echo  --- Uninstallation ---
+echo  A valid key is required to uninstall.
+echo.
+set /p "INTERACTIVE_KEY=Enter uninstallation key: "
+if "%INTERACTIVE_KEY%"=="" (
+    echo [ERROR] Key cannot be empty.
+    pause
+    goto :interactive_menu
+)
+set "CMD=uninstall"
+set "KEY=%INTERACTIVE_KEY%"
+goto :cmd_uninstall
+
+:interactive_start
+call :check_admin
+if %errorlevel% neq 0 goto :interactive_menu
+set "CMD=start"
+goto :cmd_start
+
+:interactive_stop
+call :check_admin
+if %errorlevel% neq 0 goto :interactive_menu
+set "CMD=stop"
+goto :cmd_stop
+
+:interactive_status
+set "CMD=status"
+goto :cmd_status
+
+REM ============================================================
 REM  Helper: Check administrator privileges
 REM ============================================================
 :check_admin
 net session >nul 2>&1
 if %errorlevel% neq 0 (
+    echo.
     echo [ERROR] This operation requires Administrator privileges.
-    echo         Right-click Command Prompt ^> "Run as administrator"
+    echo.
+    echo  To run as administrator:
+    echo    1. Right-click on Command Prompt or this batch file
+    echo    2. Select "Run as administrator"
+    echo.
     pause
     exit /b 2
 )
