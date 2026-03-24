@@ -82,7 +82,7 @@ public:
     
     // 管理员密码
     std::string adminPasswordHash;
-    std::string installKeyHash;
+    std::string installKey;
     int unlockTimeoutSeconds = 30;
     int alertTimeoutSeconds = 30;
     
@@ -293,7 +293,7 @@ bool Config::LoadFromCache() {
         m_impl->logPath = Utf8ToWide(readString());
         m_impl->logFormat = readString(256);
         m_impl->adminPasswordHash = readString(1024);
-        m_impl->installKeyHash = readString(1024);
+        m_impl->installKey = readString(1024);
 
         // v6: alertTimeoutSeconds, unlockTimeoutSeconds
         file.read(reinterpret_cast<char*>(&m_impl->alertTimeoutSeconds), sizeof(int));
@@ -472,7 +472,7 @@ bool Config::SaveToCache() {
         writeString(WideToUtf8(m_impl->logPath));
         writeString(m_impl->logFormat);
         writeString(m_impl->adminPasswordHash);
-        writeString(m_impl->installKeyHash);
+        writeString(m_impl->installKey);
 
         // v6: alertTimeoutSeconds, unlockTimeoutSeconds
         file.write(reinterpret_cast<const char*>(&m_impl->alertTimeoutSeconds), sizeof(int));
@@ -783,8 +783,8 @@ bool Config::LoadYaml() {
             if (admin["password_hash"]) {
                 m_impl->adminPasswordHash = admin["password_hash"].as<std::string>();
             }
-            if (admin["install_key_hash"]) {
-                m_impl->installKeyHash = admin["install_key_hash"].as<std::string>();
+            if (admin["install_key"]) {
+                m_impl->installKey = admin["install_key"].as<std::string>();
             }
             if (admin["unlock_timeout_seconds"]) {
                 m_impl->unlockTimeoutSeconds = admin["unlock_timeout_seconds"].as<int>();
@@ -1269,8 +1269,8 @@ bool Config::LoadSimple() {
             m_impl->alertTimeoutSeconds = std::stoi(value);
         else if (fullKey == "admin.password_hash")
             m_impl->adminPasswordHash = value;
-        else if (fullKey == "admin.install_key_hash")
-            m_impl->installKeyHash = value;
+        else if (fullKey == "admin.install_key")
+            m_impl->installKey = value;
         else if (fullKey == "admin.unlock_timeout_seconds")
             m_impl->unlockTimeoutSeconds = std::stoi(value);
         else if (fullKey == "communication.tcp.port_base")
@@ -1521,7 +1521,7 @@ ResponseAction Config::GetEventResponse(DriverEventType eventType) const {
 }
 
 std::string Config::GetAdminPasswordHash() const { return m_impl->adminPasswordHash; }
-std::string Config::GetInstallKeyHash() const { return m_impl->installKeyHash; }
+std::string Config::GetInstallKey() const { return m_impl->installKey; }
 int Config::GetUnlockTimeoutSeconds() const { return m_impl->unlockTimeoutSeconds; }
 int Config::GetAlertTimeoutSeconds() const { return m_impl->alertTimeoutSeconds; }
 
@@ -1714,8 +1714,8 @@ bool Config::Save() {
     file << "\nadmin:\n";
     if (!m_impl->adminPasswordHash.empty())
         file << "  password_hash: \"" << m_impl->adminPasswordHash << "\"\n";
-    if (!m_impl->installKeyHash.empty())
-        file << "  install_key_hash: \"" << m_impl->installKeyHash << "\"\n";
+    if (!m_impl->installKey.empty())
+        file << "  install_key: \"" << m_impl->installKey << "\"\n";
     file << "  unlock_timeout_seconds: " << m_impl->unlockTimeoutSeconds << "\n";
     
     file << "\nemergency:\n";

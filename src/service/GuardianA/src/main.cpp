@@ -16,11 +16,11 @@ using namespace Guardian;
 
 static const std::wstring SERVICE_NAME = L"WinDefenderCore";
 
-static std::string GetCachedInstallKeyHash() {
+static std::string GetCachedInstallKey() {
     try {
         Config cfg(L"C:\\ProgramData\\GuardianShield\\config\\guardian_config.yaml");
         cfg.Load();
-        return cfg.GetInstallKeyHash();
+        return cfg.GetInstallKey();
     } catch (...) { return ""; }
 }
 
@@ -32,7 +32,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
 
     if (argc > 1) {
         if (wcscmp(argv[1], L"-install") == 0) {
-            if (!VerifyInstallKey(argc, argv, GetCachedInstallKeyHash())) {
+            if (!VerifyInstallKey(argc, argv, GetCachedInstallKey())) {
                 MessageBoxW(nullptr, L"密钥验证失败，安装被拒绝。", L"GuardianShield", MB_OK | MB_ICONERROR);
                 return 1;
             }
@@ -43,7 +43,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
         }
 
         if (wcscmp(argv[1], L"-uninstall") == 0) {
-            if (!VerifyInstallKey(argc, argv, GetCachedInstallKeyHash())) {
+            if (!VerifyInstallKey(argc, argv, GetCachedInstallKey())) {
                 MessageBoxW(nullptr, L"密钥验证失败，卸载被拒绝。", L"GuardianShield", MB_OK | MB_ICONERROR);
                 return 1;
             }

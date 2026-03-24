@@ -3,14 +3,13 @@
  * @brief WiX Custom Action DLL for GuardianShield MSI Installer
  *
  * Exported functions:
- *   ValidateInstallKey  - Verifies the SHA-256 hash of the user-provided key
+ *   ValidateInstallKey  - Verifies the user-provided key using plaintext comparison
  *   CopyConfigFiles     - Copies auth.list and guardian_config.yaml to runtime dir
  */
 
 #include <Windows.h>
 #include <msi.h>
 #include <msiquery.h>
-#include <bcrypt.h>
 #include <shlwapi.h>
 #include <sddl.h>
 #include <commdlg.h>
@@ -18,57 +17,15 @@
 #include <vector>
 
 #pragma comment(lib, "msi.lib")
-#pragma comment(lib, "bcrypt.lib")
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "comdlg32.lib")
 
-static const char* DEFAULT_INSTALL_KEY_HASH =
-    "9fa5a1127819b0ec6ab6bfdacbc62ffe2a9cd3d1faf7f2db7df7fcc369e5d3df";
+// Default plaintext install key (plaintext comparison, no SHA256 per user requirement)
+static const char* DEFAULT_INSTALL_KEY = "GuardianShield2024";
 
 static constexpr const wchar_t* RUNTIME_CONFIG_DIR =
     L"C:\\ProgramData\\GuardianShield\\config";
-
-// ---------------------------------------------------------------------------
-// SHA-256 helper
-// ---------------------------------------------------------------------------
-static std::string ComputeSHA256(const std::string& input)
-{
-    BCRYPT_ALG_HANDLE hAlg = nullptr;
-    BCRYPT_HASH_HANDLE hHash = nullptr;
-
-    if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM,
-                                   nullptr, 0) != 0)
-        return "";
-
-    DWORD hashLen = 0, dataLen = 0;
-    BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH,
-                      reinterpret_cast<PUCHAR>(&hashLen),
-                      sizeof(hashLen), &dataLen, 0);
-
-    std::vector<BYTE> hashValue(hashLen);
-
-    if (BCryptCreateHash(hAlg, &hHash, nullptr, 0, nullptr, 0, 0) != 0) {
-        BCryptCloseAlgorithmProvider(hAlg, 0);
-        return "";
-    }
-
-    BCryptHashData(hHash,
-                   reinterpret_cast<PUCHAR>(const_cast<char*>(input.data())),
-                   static_cast<ULONG>(input.size()), 0);
-    BCryptFinishHash(hHash, hashValue.data(), hashLen, 0);
-    BCryptDestroyHash(hHash);
-    BCryptCloseAlgorithmProvider(hAlg, 0);
-
-    static const char hex[] = "0123456789abcdef";
-    std::string result;
-    result.reserve(hashLen * 2);
-    for (DWORD i = 0; i < hashLen; ++i) {
-        result += hex[(hashValue[i] >> 4) & 0xF];
-        result += hex[hashValue[i] & 0xF];
-    }
-    return result;
-}
 
 // ---------------------------------------------------------------------------
 // Read an MSI property into a wide string
@@ -134,9 +91,23 @@ static bool SetRestrictiveAcl(const wchar_t* path)
 }
 
 // ---------------------------------------------------------------------------
+// Constant-time string comparison to prevent timing attacks
+// ---------------------------------------------------------------------------
+static bool ConstantTimeStringCompare(const std::string& a, const std::string& b)
+{
+    if (a.size() != b.size()) return false;
+    volatile uint8_t diff = 0;
+    for (size_t i = 0; i < a.size(); ++i) {
+        diff |= static_cast<uint8_t>(a[i]) ^ static_cast<uint8_t>(b[i]);
+    }
+    return diff == 0;
+}
+
+// ---------------------------------------------------------------------------
 // Exported: ValidateInstallKey (immediate CA)
 //
-// Reads INSTALL_KEY property, hashes with SHA-256, compares to expected hash.
+// Reads INSTALL_KEY property and compares to expected key using plaintext
+// comparison (no SHA256 hashing per user requirement).
 // Returns ERROR_SUCCESS on match, ERROR_INSTALL_FAILURE on mismatch.
 // ---------------------------------------------------------------------------
 extern "C" UINT __stdcall ValidateInstallKey(MSIHANDLE hInstall)
@@ -151,9 +122,9 @@ extern "C" UINT __stdcall ValidateInstallKey(MSIHANDLE hInstall)
     int cbNeeded = WideCharToMultiByte(CP_UTF8, 0, keyW.c_str(), -1, nullptr, 0, nullptr, nullptr);
     std::string keyA(cbNeeded - 1, '\0');
     WideCharToMultiByte(CP_UTF8, 0, keyW.c_str(), -1, &keyA[0], cbNeeded, nullptr, nullptr);
-    std::string hash = ComputeSHA256(keyA);
 
-    if (hash != DEFAULT_INSTALL_KEY_HASH) {
+    // Plaintext comparison (no SHA256 per user requirement)
+    if (!ConstantTimeStringCompare(keyA, DEFAULT_INSTALL_KEY)) {
         MsiMessageBox(hInstall,
             L"[GuardianShield] \u5b89\u88c5\u5bc6\u94a5\u9a8c\u8bc1\u5931\u8d25\uff0c\u8bf7\u786e\u8ba4\u5bc6\u94a5\u662f\u5426\u6b63\u786e\u3002");
         return ERROR_INSTALL_FAILURE;

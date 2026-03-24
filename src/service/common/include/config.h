@@ -216,7 +216,7 @@ public:
      * @brief Get admin settings
      */
     std::string GetAdminPasswordHash() const;
-    std::string GetInstallKeyHash() const;
+    std::string GetInstallKey() const;
     int GetUnlockTimeoutSeconds() const;
     int GetAlertTimeoutSeconds() const;
     

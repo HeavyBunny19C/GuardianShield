@@ -1,0 +1,35 @@
+---
+description: 每次对话必须先读取项目记忆文件，任务完成后必须更新记忆
+alwaysApply: true
+---
+
+# Memory-First Protocol
+
+## 对话开始时（强制）
+
+在执行任何分析或修改之前，必须先读取以下 3 个文件：
+
+1. `memory/current_state.md` — 当前状态、构建状态、已知限制
+2. `memory/reflections.md` — 所有历史反思和行动清单（25 条规则）
+3. `memory/issues_and_fixes.md` — 所有问题记录和修复方案
+
+如果任务涉及特定模块，还需读取：
+- `memory/threat_detection_design.md` — 威胁检测设计
+- `memory/architecture_decisions.md` — 架构决策记录
+
+## 任务完成时（强制）
+
+在标记任何任务为"已完成"之前，必须检查并更新：
+
+1. `memory/changelog.md` — 记录本次变更
+2. `memory/issues_and_fixes.md` — 记录新发现的问题或更新已有问题状态
+3. `memory/current_state.md` — 更新已知限制或已完成功能
+
+这不是"后续清理"，这是任务完成条件的一部分。
+
+## 关键规则
+
+- 发现任何一类缺陷后，必须用 `rg` 在全代码库搜索该模式的所有实例
+- 修改 GuardianA 的任何函数后，检查 GuardianCore 基类（重构后）或 GuardianB 是否需要同步
+- 修改 batch 脚本前，先读 reflections.md 中的 batch 相关条目（反思 4、11）
+- 验证 = 工具输出（grep/diff/test），不是"我觉得对了"
