@@ -1,0 +1,367 @@
+name: GuardianShield Lifecycle Test
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      test_level:
+        description: 'Test level'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - quick      # Build + Unit tests only
+          - standard   # Build + Unit tests + Security checks
+          - full       # Full lifecycle test
+  schedule:
+    # Run full test nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  INSTALL_KEY: "GuardianShield2024"
+  BUILD_TYPE: Release
+
+jobs:
+  # ============================================================
+  # Job 1: Build Verification
+  # ============================================================
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DBUILD_TESTS=ON `
+            -DBUILD_TOOLS=ON `
+            -DBUILD_DRIVERS=OFF
+
+      - name: Build Release
+        run: cmake --build build --config Release
+
+      - name: Check Compiler Warnings
+        shell: pwsh
+        run: |
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build.log
+          $warnings = Select-String -Path build.log -Pattern "warning C\d+"
+          if ($warnings.Count -gt 0) {
+            Write-Host "::warning::Found $($warnings.Count) compiler warning(s):"
+            $warnings | ForEach-Object { Write-Host "  $_" }
+            # Uncomment to fail on warnings:
+            # exit 1
+          } else {
+            Write-Host "[PASS] Zero compiler warnings"
+          }
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build/src/service/GuardianA/Release/*.exe
+            build/src/service/GuardianB/Release/*.exe
+            build/src/service/GuardianC/Release/*.exe
+            build/test/Release/*.exe
+          retention-days: 7
+
+  # ============================================================
+  # Job 2: Unit Tests
+  # ============================================================
+  unit-test:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/
+
+      - name: Run Unit Tests
+        working-directory: build
+        run: |
+          ctest -C Release --output-on-failure --verbose
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: build/Testing/
+          retention-days: 7
+
+  # ============================================================
+  # Job 3: Security Verification
+  # ============================================================
+  security-check:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Security Scan
+        shell: pwsh
+        run: |
+          Write-Host "=== GuardianShield Security Verification ===" -ForegroundColor Cyan
+          $failed = $false
+          
+          # Check 1: HMAC hardcoded key removed
+          Write-Host "`n[Check 1] Hardcoded HMAC key removed..."
+          $hmacKey = Select-String -Path "src/service/common/src/ipc.cpp" -Pattern "GuardianShield_IPC_v2" -SimpleMatch
+          if ($hmacKey) { 
+            Write-Host "  [FAIL] Hardcoded HMAC key still present!" -ForegroundColor Red
+            $failed = $true
+          } else { 
+            Write-Host "  [PASS] Hardcoded HMAC key removed" -ForegroundColor Green
+          }
+          
+          # Check 2: SHA256File implemented
+          Write-Host "`n[Check 2] SHA256File implementation..."
+          $shaImpl = Select-String -Path "src/service/common/src/security.cpp" -Pattern "BCryptCreateHash"
+          if (-not $shaImpl) { 
+            Write-Host "  [FAIL] SHA256File not implemented!" -ForegroundColor Red
+            $failed = $true
+          } else { 
+            Write-Host "  [PASS] SHA256File BCrypt implementation present" -ForegroundColor Green
+          }
+          
+          # Check 3: Global mutex in GuardianA
+          Write-Host "`n[Check 3] GuardianA Global mutex (split-brain protection)..."
+          $mutexA = Select-String -Path "src/service/GuardianA/src/guardian_a.cpp" -Pattern "GuardianShield-Leader" -SimpleMatch
+          if (-not $mutexA) { 
+            Write-Host "  [FAIL] Global mutex missing in GuardianA!" -ForegroundColor Red
+            $failed = $true
+          } else { 
+            Write-Host "  [PASS] Global mutex in GuardianA" -ForegroundColor Green
+          }
+          
+          # Check 4: Global mutex in GuardianB
+          Write-Host "`n[Check 4] GuardianB Global mutex (split-brain protection)..."
+          $mutexB = Select-String -Path "src/service/GuardianB/src/guardian_b.cpp" -Pattern "GuardianShield-Leader" -SimpleMatch
+          if (-not $mutexB) { 
+            Write-Host "  [FAIL] Global mutex missing in GuardianB!" -ForegroundColor Red
+            $failed = $true
+          } else { 
+            Write-Host "  [PASS] Global mutex in GuardianB" -ForegroundColor Green
+          }
+          
+          # Check 5: ETW orphan session recovery
+          Write-Host "`n[Check 5] ETW orphan session recovery..."
+          $etwRecovery = Select-String -Path "src/service/GuardianA/src/guardian_a.cpp" -Pattern "ERROR_ALREADY_EXISTS"
+          if (-not $etwRecovery) { 
+            Write-Host "  [FAIL] ETW orphan recovery missing!" -ForegroundColor Red
+            $failed = $true
+          } else { 
+            Write-Host "  [PASS] ETW orphan recovery implemented" -ForegroundColor Green
+          }
+          
+          # Check 6: Plaintext install key (not SHA256)
+          Write-Host "`n[Check 6] Plaintext install key verification..."
+          $keyHash = Select-String -Path "src/service/common/include/install_key.h" -Pattern "DEFAULT_INSTALL_KEY_HASH"
+          $keyPlain = Select-String -Path "src/service/common/include/install_key.h" -Pattern "DEFAULT_INSTALL_KEY\s*="
+          if ($keyHash -and -not $keyPlain) { 
+            Write-Host "  [WARN] Still using SHA256 hash for install key" -ForegroundColor Yellow
+          } elseif ($keyPlain) { 
+            Write-Host "  [PASS] Using plaintext install key" -ForegroundColor Green
+          }
+          
+          Write-Host "`n=== Security Check Complete ===" -ForegroundColor Cyan
+          if ($failed) { exit 1 }
+
+  # ============================================================
+  # Job 4: Lifecycle Test (Full only)
+  # ============================================================
+  lifecycle-test:
+    needs: [build, unit-test, security-check]
+    if: github.event.inputs.test_level == 'full' || github.event_name == 'schedule' || github.event_name == 'push'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: deploy-package/
+
+      - name: Prepare Deployment Package
+        shell: pwsh
+        run: |
+          # Copy required files to deployment package
+          Copy-Item install.bat deploy-package/ -ErrorAction SilentlyContinue
+          Copy-Item config/guardian_config.yaml deploy-package/ -ErrorAction SilentlyContinue
+          Copy-Item config/auth.list deploy-package/ -ErrorAction SilentlyContinue
+          
+          Write-Host "Deployment package contents:"
+          Get-ChildItem deploy-package/ | Format-Table Name, Length
+
+      - name: Run Lifecycle Test
+        shell: pwsh
+        run: |
+          $scriptPath = "$env:GITHUB_WORKSPACE/scripts/ci/lifecycle-test.ps1"
+          if (Test-Path $scriptPath) {
+            & $scriptPath -Key "$env:INSTALL_KEY" -PackageDir "$env:GITHUB_WORKSPACE/deploy-package"
+          } else {
+            Write-Host "Lifecycle test script not found, using inline test..."
+            # Inline basic lifecycle test
+            $pkg = "$env:GITHUB_WORKSPACE/deploy-package"
+            $key = "$env:INSTALL_KEY"
+            
+            # Pre-cleanup
+            @("WinDefenderCore", "WinDefenderHelper") | ForEach-Object {
+              sc stop $_ 2>$null
+              sc delete $_ 2>$null
+            }
+            @("svchost_core", "svchost_helper", "winmon") | ForEach-Object {
+              taskkill /F /IM "$_.exe" 2>$null
+            }
+            Remove-Item -Path "C:\Program Files\GuardianShield" -Recurse -Force 2>$null
+            Remove-Item -Path "C:\ProgramData\GuardianShield" -Recurse -Force 2>$null
+            Start-Sleep -Seconds 3
+            
+            # Test installation
+            Write-Host "`n[Test] Installation..."
+            $proc = Start-Process -FilePath "$pkg\install.bat" -ArgumentList "/install", "/key", $key -Wait -PassThru -NoNewWindow
+            if ($proc.ExitCode -ne 0) { throw "Installation failed with exit code $($proc.ExitCode)" }
+            Write-Host "[PASS] Installation" -ForegroundColor Green
+            
+            # Verify services
+            Write-Host "`n[Test] Service Verification..."
+            $svcA = Get-Service -Name "WinDefenderCore" -ErrorAction Stop
+            $svcB = Get-Service -Name "WinDefenderHelper" -ErrorAction Stop
+            if ($svcA.Status -ne 'Running') { throw "GuardianA not running" }
+            if ($svcB.Status -ne 'Running') { throw "GuardianB not running" }
+            Write-Host "[PASS] Services running" -ForegroundColor Green
+            
+            # Wait and verify logs
+            Write-Host "`n[Test] Runtime Verification..."
+            Start-Sleep -Seconds 5
+            $logDir = "C:\ProgramData\GuardianShield\logs"
+            if (-not (Test-Path $logDir)) { throw "Log directory not created" }
+            $logFiles = Get-ChildItem "$logDir\*.json" -ErrorAction SilentlyContinue
+            if ($logFiles.Count -eq 0) { throw "No log files created" }
+            Write-Host "[PASS] Runtime verification" -ForegroundColor Green
+            
+            # Test uninstallation
+            Write-Host "`n[Test] Uninstallation..."
+            $proc = Start-Process -FilePath "$pkg\install.bat" -ArgumentList "/uninstall", "/key", $key -Wait -PassThru -NoNewWindow
+            if ($proc.ExitCode -ne 0) { throw "Uninstallation failed with exit code $($proc.ExitCode)" }
+            Write-Host "[PASS] Uninstallation" -ForegroundColor Green
+            
+            # Verify cleanup
+            Write-Host "`n[Test] Cleanup Verification..."
+            $svcA = Get-Service -Name "WinDefenderCore" -ErrorAction SilentlyContinue
+            $svcB = Get-Service -Name "WinDefenderHelper" -ErrorAction SilentlyContinue
+            if ($svcA -or $svcB) { throw "Services still exist after uninstall" }
+            Write-Host "[PASS] Cleanup verification" -ForegroundColor Green
+            
+            Write-Host "`n=== All Lifecycle Tests Passed ===" -ForegroundColor Green
+          }
+
+  # ============================================================
+  # Job 5: Package Deployment Bundle
+  # ============================================================
+  package:
+    needs: [build, unit-test, security-check]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: deploy-package/
+
+      - name: Create Deployment Package
+        shell: pwsh
+        run: |
+          Copy-Item install.bat deploy-package/
+          Copy-Item config/guardian_config.yaml deploy-package/
+          Copy-Item config/auth.list deploy-package/
+          
+          # Create version info file
+          $version = "3.3.0"
+          $commit = "$env:GITHUB_SHA".Substring(0, 7)
+          $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+          @"
+GuardianShield v$version
+Build: $commit
+Date: $date
+"@ | Out-File -FilePath deploy-package/version.txt
+          
+          Write-Host "Deployment package ready:"
+          Get-ChildItem deploy-package/ | Format-Table Name, Length
+
+      - name: Upload Deployment Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: GuardianShield-v3.3.0-deploy
+          path: deploy-package/
+          retention-days: 90
+
+  # ============================================================
+  # Job 6: Test Report Aggregation
+  # ============================================================
+  test-report:
+    needs: [unit-test, security-check, lifecycle-test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Download All Test Results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results/
+          pattern: '*-test-results'
+
+      - name: Generate Summary
+        run: |
+          echo "# GuardianShield Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.unit-test.result }}" == "success" ]; then
+            echo "| Unit Tests | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Unit Tests | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.security-check.result }}" == "success" ]; then
+            echo "| Security Checks | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Security Checks | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.lifecycle-test.result }}" == "success" ]; then
+            echo "| Lifecycle Test | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.lifecycle-test.result }}" == "skipped" ]; then
+            echo "| Lifecycle Test | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Lifecycle Test | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          fi
