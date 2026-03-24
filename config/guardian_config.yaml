@@ -320,15 +320,15 @@ logging:                 # 日志配置节
 #
 # 【密码与密钥说明】
 # - password_hash 用于紧急协议锁屏后的解锁验证（GuardianC 锁屏界面输入）
-# - install_key_hash 用于安装/卸载服务时的身份验证
-# - 两者均为 SHA-256 哈希，格式为 64 位小写十六进制字符串
+#   格式为 SHA-256 哈希，64 位小写十六进制字符串
+# - install_key 用于安装/卸载服务时的身份验证（明文存储）
 #
-# 【默认密码/密钥（未配置 hash 时生效）】
+# 【默认密码/密钥（未配置时生效）】
 #   - 默认解锁密码:  GuardianShield2026!
-#   - 默认安装密钥:  GuardianShield2026!
+#   - 默认安装密钥:  GuardianShield2024
 #   - 【安全警告】生产环境必须更换默认密码和密钥！
 #
-# 【哈希生成方法】
+# 【密码哈希生成方法】
 #   方法一 — 使用项目自带工具（推荐）:
 #     cd GuardianShield\tools
 #     python hash_tool.py --text "你的密码"
@@ -349,12 +349,13 @@ admin:                   # 管理员配置节（敏感，仅管理员可修改�
   #   - 格式: 64 位小写十六进制字符串
   password_hash: "9fa5a1127819b0ec6ab6bfdacbc62ffe2a9cd3d1faf7f2db7df7fcc369e5d3df"  # 解锁密码的 SHA-256 哈希（64位小写十六进制）
 
-  # install_key_hash: 安装/卸载密钥的 SHA-256 哈希值
-  #   - 安装（MSI 安装向导 / svchost_core.exe -install）和
-  #     卸载（uninstall.bat / svchost_core.exe -uninstall）时均需验证
-  #   - 留空或删除此字段: 使用内置默认密钥 GuardianShield2026!
-  #   - 格式: 64 位小写十六进制字符串
-  install_key_hash: "9fa5a1127819b0ec6ab6bfdacbc62ffe2a9cd3d1faf7f2db7df7fcc369e5d3df"  # 安装密钥的 SHA-256 哈希（64位小写十六进制）
+  # install_key: 安装/卸载密钥（明文存储）
+  #   - 安装（install.bat /install /key <密钥>）和
+  #     卸载（install.bat /uninstall /key <密钥>）时均需验证
+  #   - 留空或删除此字段: 使用内置默认密钥 GuardianShield2024
+  #   - 格式: 任意字符串，建议包含大小写字母和数字
+  #   - 【安全提示】此密钥为明文存储，请妥善保管配置文件
+  install_key: "GuardianShield2024"  # 安装/卸载密钥（明文）
 
   # unlock_timeout_seconds: 锁屏等待超时时间（秒）
   #   - 系统进入 LOCKED 状态后，管理员需在此时间内输入解锁密码
