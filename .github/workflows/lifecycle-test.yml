@@ -21,7 +21,6 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  INSTALL_KEY: "GuardianShield2024"
   BUILD_TYPE: Release
 
 jobs:
@@ -173,12 +172,12 @@ jobs:
           
           # Check 6: Plaintext install key (not SHA256)
           Write-Host "`n[Check 6] Plaintext install key verification..."
-          $keyHash = Select-String -Path "src/service/common/include/install_key.h" -Pattern "DEFAULT_INSTALL_KEY_HASH"
-          $keyPlain = Select-String -Path "src/service/common/include/install_key.h" -Pattern "DEFAULT_INSTALL_KEY\s*="
-          if ($keyHash -and -not $keyPlain) { 
-            Write-Host "  [WARN] Still using SHA256 hash for install key" -ForegroundColor Yellow
-          } elseif ($keyPlain) { 
-            Write-Host "  [PASS] Using plaintext install key" -ForegroundColor Green
+          $defaultKey = Select-String -Path "src/service/common/include/install_key.h" -Pattern "GuardianShield20\d{2}"
+          if ($defaultKey) {
+            Write-Host "  [FAIL] Built-in install key still present" -ForegroundColor Red
+            exit 1
+          } else {
+            Write-Host "  [PASS] No built-in install key" -ForegroundColor Green
           }
           
           Write-Host "`n=== Security Check Complete ===" -ForegroundColor Cyan
@@ -203,6 +202,11 @@ jobs:
           name: build-artifacts
           path: deploy-package/
 
+      - name: Generate ephemeral test key
+        shell: pwsh
+        run: |
+          "INSTALL_KEY=ci-$([guid]::NewGuid().ToString('N'))" >> $env:GITHUB_ENV
+
       - name: Prepare Deployment Package
         shell: pwsh
         run: |
@@ -210,6 +214,11 @@ jobs:
           Copy-Item install.bat deploy-package/ -ErrorAction SilentlyContinue
           Copy-Item config/guardian_config.yaml deploy-package/ -ErrorAction SilentlyContinue
           Copy-Item config/auth.list deploy-package/ -ErrorAction SilentlyContinue
+
+          $configPath = "deploy-package/guardian_config.yaml"
+          $config = Get-Content $configPath -Raw
+          $config = $config -replace '(?m)^\s*install_key:\s*.*$', "  install_key: `"$env:INSTALL_KEY`""
+          Set-Content -Path $configPath -Value $config -Encoding utf8NoBOM
           
           Write-Host "Deployment package contents:"
           Get-ChildItem deploy-package/ | Format-Table Name, Length
