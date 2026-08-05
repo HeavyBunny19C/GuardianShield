@@ -1,8 +1,16 @@
-# GuardianShield - 源代码防护系统
+<p align="center">
+  <h1 align="center">🛡️ GuardianShield</h1>
+</p>
 
-面向 Windows 的源代码防护系统，采用五层纵深防御架构 + 进程守护三角，并提供可选的内核级文件系统监控组件。
+<p align="center">
+  <strong>把源代码保护、事件监控和应急响应，放进一套 Windows 守护系统里。</strong>
+</p>
 
-[返回中文首页](README.md)
+<p align="center">
+  <a href="./README.md">返回中文首页</a>
+</p>
+
+GuardianShield 面向 Windows，监控配置的保护目录，并根据文件、进程和批量操作策略评估活动。完整的架构、部署、配置、测试、故障排除和卸载说明见下文。
 
 ---
 

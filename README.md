@@ -1,25 +1,51 @@
-# GuardianShield - 源代码防护系统
+<p align="center">
+  <h1 align="center">🛡️ GuardianShield</h1>
+</p>
 
-面向 Windows 的源代码保护系统，围绕事件监控、可配置响应策略和三节点守护架构工作。
+<p align="center">
+  <strong>把源代码保护、事件监控和应急响应，放进一套 Windows 守护系统里。</strong>
+</p>
 
-GuardianShield 监控配置的保护目录，并根据文件、进程和批量操作策略评估活动。系统可按策略记录日志、发送告警、终止进程、加密文件；配置并加载可选内核过滤驱动后，还可以执行 I/O 阻断。
+<p align="center">
+  <a href="./README.md">中文</a> · <a href="./README.zh-CN.md">中文详细文档</a> · <a href="#english-overview">English</a>
+</p>
 
-## 核心组件
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows" alt="Windows" />
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?style=flat-square&logo=cplusplus" alt="C++17" />
+  <img src="https://img.shields.io/badge/CMake-%3E%3D3.20-064F8C?style=flat-square&logo=cmake" alt="CMake 3.20+" />
+  <img src="https://img.shields.io/badge/version-3.3.0-orange?style=flat-square" alt="Version 3.3.0" />
+</p>
 
-- **GuardianA**：主控 Windows 服务，负责事件采集、威胁评估、策略执行、IPC 和紧急状态机。
-- **GuardianB**：备控 Windows 服务，监控 GuardianA，并在心跳超时后接管主控角色。
-- **GuardianC**：用户态监控程序，提供通知、托盘状态、锁屏界面和用户会话集成。
-- **GuardFilter.sys / GuardMonitor.sys**：可选内核组件，需要 WDK，默认不编译。
+## 🤔 这是什么？
 
-紧急状态机为：
+你可能不想等到源码被批量改写、删除或搬走之后，才开始翻日志。
+
+GuardianShield 监控配置的保护目录，根据文件、进程和批量操作评估风险，再按策略记录日志、发送告警、终止进程或加密文件。需要内核拦截时，可以额外编译并加载 WDK 驱动。
+
+它不是一个把所有东西藏在后台的单进程脚本，而是由三个 Guardian 节点共同完成监控、决策和用户侧响应：
+
+- 🧠 **GuardianA**：主控服务，负责事件采集、威胁评估、策略执行、IPC 和紧急状态机。
+- 🛟 **GuardianB**：备控服务，监控 GuardianA，并在心跳超时后接管主控角色。
+- 🖥️ **GuardianC**：用户态监控程序，提供通知、托盘状态、锁屏界面和用户会话集成。
+
+## 🏗️ 工作方式
+
+```text
+事件采集 -> 策略评估 -> 日志 / 告警 / 阻断 / 终止 / 加密
+                         |
+             批量阈值 -> 保护协议或紧急协议
+```
+
+紧急状态机是显式的：
 
 ```text
 NORMAL -> ALERT -> ENCRYPTING -> WIPING -> DELETING -> LOCKED
 ```
 
-Tier 2 处置可能包含擦除和删除，具有不可逆风险。请只在隔离环境和可丢弃数据上测试。
+⚠️ Tier 2 处置可能包含擦除和删除，具有不可逆风险。请只在隔离环境和可丢弃数据上测试。
 
-## 快速开始
+## 🚀 快速开始
 
 ### 环境要求
 
@@ -58,15 +84,15 @@ install.bat /uninstall /key <安装密钥>
 
 配置模板为 `config/guardian_config.yaml`，授权清单为 `config/auth.list`。配置成功读取后，输入文件会被删除，活动策略保存在受保护的二进制缓存中。
 
-## 当前边界
+## ⚠️ 先看边界
 
-- 内核驱动为可选组件，默认构建不包含驱动。
+- 内核驱动是可选组件，默认构建不包含驱动。
 - `BLOCK` 依赖 `GuardFilter.sys`；驱动未加载时不会自动降级为进程终止。
 - TCP 通道尚未初始化，TLS 尚未实现。
 - 部分事件类型仍是预留项，详见 [`docs/FUNCTIONAL_SPEC.md`](docs/FUNCTIONAL_SPEC.md)。
 - 仓库未包含开源 `LICENSE` 文件，现有项目文档将其描述为内部/保密使用项目。
 
-## 中文文档
+## 📚 中文文档
 
 - [中文完整说明](README.zh-CN.md)
 - [管理员操作手册](docs/ADMIN_MANUAL.md)
