@@ -2,7 +2,7 @@
 
 面向 Windows 的源代码防护系统，采用五层纵深防御架构 + 进程守护三角，并提供可选的内核级文件系统监控组件。
 
-[English overview](README.md)
+[返回中文首页](README.md)
 
 ---
 

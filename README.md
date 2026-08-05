@@ -1,4 +1,81 @@
-# GuardianShield
+# GuardianShield - 源代码防护系统
+
+面向 Windows 的源代码保护系统，围绕事件监控、可配置响应策略和三节点守护架构工作。
+
+GuardianShield 监控配置的保护目录，并根据文件、进程和批量操作策略评估活动。系统可按策略记录日志、发送告警、终止进程、加密文件；配置并加载可选内核过滤驱动后，还可以执行 I/O 阻断。
+
+## 核心组件
+
+- **GuardianA**：主控 Windows 服务，负责事件采集、威胁评估、策略执行、IPC 和紧急状态机。
+- **GuardianB**：备控 Windows 服务，监控 GuardianA，并在心跳超时后接管主控角色。
+- **GuardianC**：用户态监控程序，提供通知、托盘状态、锁屏界面和用户会话集成。
+- **GuardFilter.sys / GuardMonitor.sys**：可选内核组件，需要 WDK，默认不编译。
+
+紧急状态机为：
+
+```text
+NORMAL -> ALERT -> ENCRYPTING -> WIPING -> DELETING -> LOCKED
+```
+
+Tier 2 处置可能包含擦除和删除，具有不可逆风险。请只在隔离环境和可丢弃数据上测试。
+
+## 快速开始
+
+### 环境要求
+
+- Windows 10/11 x64
+- Visual Studio 2022，包含 C++ 桌面开发工作负载
+- Windows SDK 10.0.19041.0 或更高版本
+- CMake 3.20+
+- 安装、启动、停止、配置部署和卸载需要管理员权限
+- 仅在编译内核驱动时需要 WDK 11
+
+### 源码构建
+
+```bat
+build.bat
+```
+
+快速构建路径默认关闭测试和驱动。需要显式配置测试时：
+
+```powershell
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+  -DBUILD_TESTS=ON -DBUILD_DRIVERS=OFF
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
+```
+
+### 部署运行
+
+以管理员身份运行 `run.bat`，可选择构建、安装、启动、停止、查看状态、卸载和生成 MSI。预编译部署包可使用：
+
+```bat
+install.bat /install /key <安装密钥>
+install.bat /status
+install.bat /stop
+install.bat /uninstall /key <安装密钥>
+```
+
+配置模板为 `config/guardian_config.yaml`，授权清单为 `config/auth.list`。配置成功读取后，输入文件会被删除，活动策略保存在受保护的二进制缓存中。
+
+## 当前边界
+
+- 内核驱动为可选组件，默认构建不包含驱动。
+- `BLOCK` 依赖 `GuardFilter.sys`；驱动未加载时不会自动降级为进程终止。
+- TCP 通道尚未初始化，TLS 尚未实现。
+- 部分事件类型仍是预留项，详见 [`docs/FUNCTIONAL_SPEC.md`](docs/FUNCTIONAL_SPEC.md)。
+- 仓库未包含开源 `LICENSE` 文件，现有项目文档将其描述为内部/保密使用项目。
+
+## 中文文档
+
+- [中文完整说明](README.zh-CN.md)
+- [管理员操作手册](docs/ADMIN_MANUAL.md)
+- [功能说明书](docs/FUNCTIONAL_SPEC.md)
+- [保护方案](docs/PROTECTION_SPEC.md)
+
+---
+
+## English Overview
 
 **A Windows-native source-code protection system built around event monitoring, configurable response policies, and a three-node guardian architecture.**
 
