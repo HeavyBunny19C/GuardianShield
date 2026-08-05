@@ -209,9 +209,6 @@
                   Execute="immediate"
                   Return="check" />
 
-    <!-- Set default install key for MajorUpgrade compatibility (Approach B) -->
-    <CustomAction Id="CA_SetDefaultKey" Property="INSTALL_KEY" Value="GuardianShield2026!" />
-
     <!-- Backup/restore config_cache.bin across MajorUpgrade -->
     <CustomAction Id="CA_BackupConfigCache"
                   BinaryKey="GuardianCA"
@@ -248,10 +245,7 @@
 
     <!-- Install sequence -->
     <InstallExecuteSequence>
-      <Custom Action="CA_BackupConfigCache" Before="CA_SetDefaultKey">
-        NOT Installed
-      </Custom>
-      <Custom Action="CA_SetDefaultKey" Before="RemoveExistingProducts">
+      <Custom Action="CA_BackupConfigCache" Before="RemoveExistingProducts">
         NOT Installed
       </Custom>
       <Custom Action="CA_RestoreConfigCache" After="RemoveExistingProducts">

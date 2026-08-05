@@ -50,7 +50,6 @@
           <Publish Event="NewDialog" Value="GS_WelcomeDlg">1</Publish>
         </Control>
         <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="下一步">
-          <Publish Event="DoAction" Value="CA_ValidateInstallKey">1</Publish>
           <Publish Event="NewDialog" Value="ConfigSelectDlg">INSTALL_KEY</Publish>
         </Control>
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
@@ -85,6 +84,7 @@
           <Publish Event="NewDialog" Value="InstallKeyDlg">1</Publish>
         </Control>
         <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="下一步">
+          <Publish Event="DoAction" Value="CA_ValidateInstallKey">1</Publish>
           <Publish Event="NewDialog" Value="GS_VerifyReadyDlg">1</Publish>
         </Control>
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="取消">
