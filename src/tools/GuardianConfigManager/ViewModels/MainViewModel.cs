@@ -225,17 +225,22 @@ public class MainViewModel : ViewModelBase
     private void GenerateHash(bool isPassword)
     {
         var prompt = isPassword ? "请输入管理员解锁密码:" : "请输入安装/卸载密钥:";
-        var input = InputDialog.Show(prompt, "生成 SHA-256 哈希");
+        var input = InputDialog.Show(prompt, isPassword ? "生成 SHA-256 哈希" : "设置安装密钥");
 
         if (string.IsNullOrEmpty(input)) return;
 
-        var hash = HashService.ComputeSha256(input);
         if (isPassword)
+        {
+            var hash = HashService.ComputeSha256(input);
             Config.Admin.PasswordHash = hash;
+            StatusText = $"已生成 SHA-256: {hash[..16]}...";
+        }
         else
-            Config.Admin.InstallKeyHash = hash;
+        {
+            Config.Admin.InstallKey = input;
+            StatusText = "安装密钥已设置。";
+        }
 
         OnPropertyChanged(nameof(Config));
-        StatusText = $"已生成 SHA-256: {hash[..16]}...";
     }
 }
