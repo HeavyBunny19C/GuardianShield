@@ -191,8 +191,8 @@ public class AdminConfig
     [YamlMember(Alias = "password_hash")]
     public string PasswordHash { get; set; } = "";
 
-    [YamlMember(Alias = "install_key_hash")]
-    public string InstallKeyHash { get; set; } = "";
+    [YamlMember(Alias = "install_key")]
+    public string InstallKey { get; set; } = "";
 
     [YamlMember(Alias = "unlock_timeout_seconds")]
     public int UnlockTimeoutSeconds { get; set; } = 30;
