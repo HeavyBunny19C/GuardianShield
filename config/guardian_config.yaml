@@ -323,10 +323,9 @@ logging:                 # 日志配置节
 #   格式为 SHA-256 哈希，64 位小写十六进制字符串
 # - install_key 用于安装/卸载服务时的身份验证（明文存储）
 #
-# 【默认密码/密钥（未配置时生效）】
-#   - 默认解锁密码:  GuardianShield2026!
-#   - 默认安装密钥:  GuardianShield2024
-#   - 【安全警告】生产环境必须更换默认密码和密钥！
+# 【密码/密钥】
+#   - 本模板不包含默认密码或安装密钥。
+#   - 部署前必须由管理员填写自己的值。
 #
 # 【密码哈希生成方法】
 #   方法一 — 使用项目自带工具（推荐）:
@@ -345,17 +344,17 @@ admin:                   # 管理员配置节（敏感，仅管理员可修改�
   #   - 紧急协议触发后，系统进入 LOCKED 状态，GuardianC 弹出锁屏界面
   #   - 管理员在该界面输入密码，系统计算 SHA-256 后与此值比对
   #   - 验证通过则解除紧急状态，恢复 NORMAL
-  #   - 留空或删除此字段: 使用内置默认密码 GuardianShield2026!
+#   - 留空或删除此字段: 禁止解锁操作，直到管理员配置密码哈希。
   #   - 格式: 64 位小写十六进制字符串
-  password_hash: "9fa5a1127819b0ec6ab6bfdacbc62ffe2a9cd3d1faf7f2db7df7fcc369e5d3df"  # 解锁密码的 SHA-256 哈希（64位小写十六进制）
+  password_hash: ""             # 解锁密码的 SHA-256 哈希（64位小写十六进制）
 
   # install_key: 安装/卸载密钥（明文存储）
   #   - 安装（install.bat /install /key <密钥>）和
   #     卸载（install.bat /uninstall /key <密钥>）时均需验证
-  #   - 留空或删除此字段: 使用内置默认密钥 GuardianShield2024
+  #   - 留空或删除此字段: 禁止安装/卸载操作，直到管理员配置密钥。
   #   - 格式: 任意字符串，建议包含大小写字母和数字
   #   - 【安全提示】此密钥为明文存储，请妥善保管配置文件
-  install_key: "GuardianShield2024"  # 安装/卸载密钥（明文）
+  install_key: ""              # 安装/卸载密钥（明文，部署前必须填写）
 
   # unlock_timeout_seconds: 锁屏等待超时时间（秒）
   #   - 系统进入 LOCKED 状态后，管理员需在此时间内输入解锁密码
@@ -447,7 +446,7 @@ whitelist:               # 进程白名单配置节
 # 【如何解除紧急协议（恢复到 NORMAL）】
 #   - 在 ALERT 阶段: GuardianC 控制面板中点击"取消紧急状态"，直接恢复
 #   - 在 LOCKED 阶段: 在 GuardianC 锁屏界面输入管理员解锁密码
-#     (见上方 admin.password_hash 配置，默认密码: GuardianShield2026!)
+#     （见上方 admin.password_hash 配置）
 #   - 在 ENCRYPTING/WIPING/DELETING 阶段: 无法中断，必须等到 LOCKED 后解锁
 #
 # 【注意事项】
@@ -494,9 +493,9 @@ emergency:               # 紧急协议配置节（高度敏感，仅管理员�
   notifications:           # 紧急事件通知渠道列表
     - type: EMAIL                                        # 通知类型: EMAIL=邮件通知
       recipients:                                        # 邮件接收人列表（可配置多个）
-        - "security@company.com"                         # 安全团队邮箱地址
+        - "security@example.invalid"                     # 部署环境的安全联系人
     - type: WEBHOOK                                      # 通知类型: WEBHOOK=HTTP 回调通知
-      url: "https://alert.company.com/api/incident"      # Webhook 回调地址（POST 请求）
+      url: "https://alerts.example.invalid/api/incident" # 部署环境的 Webhook 地址
 
 
 # ================================================================

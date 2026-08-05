@@ -1,5 +1,4 @@
-192.168.110.124,14:18:C3:E3:A1:75,雷蛇
-172.20.10.13,14:18:C3:E3:A1:75,雷蛇WLAN
-192.168.110.148,6C:24:08:23:3A:1B,本机测试
-192.168.10.2,8C:B8:7E:53:01:3D,Lee
-192.168.110.217,98:BB:1E:1E:3D:49,雷蛇以太网
+# GuardianShield authorized-device list
+# Format: IP address,MAC address,description
+# Replace these examples with the deployment-specific values before use.
+# 192.0.2.10,00:11:22:33:44:55,example-workstation-1
