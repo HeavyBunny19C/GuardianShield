@@ -13,12 +13,14 @@
 #>
 
 param(
-    [string]$ProtectedDir = "C:\Users\Administrator\Documents\test",
+    [string]$ProtectedDir = "C:\Temp\GuardianShieldTest",
     [string]$LogDir = "C:\ProgramData\GuardianShield\logs",
     [string]$CachePath = "C:\ProgramData\GuardianShield\config_cache.bin"
 )
 
 $ErrorActionPreference = "Continue"
+$OutsideDir = Join-Path $env:TEMP "GuardianShieldOutside"
+New-Item -ItemType Directory -Path $OutsideDir -Force | Out-Null
 $script:PassCount = 0
 $script:FailCount = 0
 $script:SkipCount = 0
@@ -124,7 +126,7 @@ function Clean-TestFiles {
         Remove-Item -Force -ErrorAction SilentlyContinue
     Remove-Item (Join-Path $ProtectedDir "desktop.ini") -Force -ErrorAction SilentlyContinue
     Remove-Item (Join-Path $ProtectedDir "Thumbs.db") -Force -ErrorAction SilentlyContinue
-    Remove-Item "C:\Users\Administrator\Documents\outside_test.txt" -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $OutsideDir "outside_test.txt") -Force -ErrorAction SilentlyContinue
 }
 
 # ============================================================
@@ -306,14 +308,14 @@ if ($match2r2) { Test-Pass "T2R.2" "FILE_RENAME detected for same-volume Move-It
 else { Test-Fail "T2R.2" "FILE_RENAME not detected for same-volume Move-Item" }
 
 $baseline2r_3 = Get-LogBaseline
-$outsideRenSrc = "C:\Users\Administrator\Documents\phase2r_outside.txt"
+$outsideRenSrc = Join-Path $OutsideDir "phase2r_outside.txt"
 Set-Content -Path $outsideRenSrc -Value "outside rename"
 Start-Sleep -Seconds 1
 Rename-Item -Path $outsideRenSrc -NewName "phase2r_outside_renamed.txt" -Force -ErrorAction SilentlyContinue
 $noMatch = Wait-ForNoLogMatch $baseline2r_3 "phase2r_outside" 6
 if ($noMatch) { Test-Pass "T2R.3" "Rename outside protected dir NOT detected (correct)" }
 else { Test-Fail "T2R.3" "Rename outside protected dir was detected!" }
-Remove-Item "C:\Users\Administrator\Documents\phase2r_outside*" -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $OutsideDir "phase2r_outside*") -Force -ErrorAction SilentlyContinue
 
 $baseline2r_4 = Get-LogBaseline
 $logRenSrc = Join-Path $ProtectedDir "phase2r_test.log"
@@ -430,7 +432,7 @@ Write-TestHeader 6 "Path Boundary Verification" 2
 
 $baseline6 = Get-LogBaseline
 
-$outsideFile = "C:\Users\Administrator\Documents\outside_test.txt"
+$outsideFile = Join-Path $OutsideDir "outside_test.txt"
 Set-Content -Path $outsideFile -Value "outside protected dir"
 Start-Sleep -Seconds 5
 $newLines6 = Get-NewLogLines $baseline6
@@ -1022,7 +1024,7 @@ if ($match15) { Test-Pass "T15.1" "File inside protected directory detected" }
 else { Test-Fail "T15.1" "File inside protected directory NOT detected" }
 
 $baseline15o = Get-LogBaseline
-$outsideFile15 = "C:\Users\Administrator\Documents\phase15_outside.txt"
+$outsideFile15 = Join-Path $OutsideDir "phase15_outside.txt"
 Set-Content -Path $outsideFile15 -Value "outside test"
 Start-Sleep -Seconds 5
 $newLines15o = Get-NewLogLines $baseline15o

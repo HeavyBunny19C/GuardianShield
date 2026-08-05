@@ -6,7 +6,8 @@
 
 param(
     [string]$MsiPath,
-    [string]$InstallKey = "GuardianShield2026!"
+    [Parameter(Mandatory=$true)]
+    [string]$InstallKey
 )
 
 $ErrorActionPreference = "Continue"
