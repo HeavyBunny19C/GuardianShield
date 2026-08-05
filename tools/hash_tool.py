@@ -4,11 +4,11 @@ GuardianShield SHA-256 Hash Tool
 
 Generates SHA-256 hashes for use in guardian_config.yaml:
   - admin.password_hash
-  - admin.install_key_hash
+  - admin.install_key is configured as plaintext and is not generated here
 
 Usage:
   python hash_tool.py                  # Interactive mode (hidden input)
-  python hash_tool.py --text "secret"  # Direct text input
+  python hash_tool.py --text "<text>"  # Direct text input
   python hash_tool.py --verify HASH    # Verify text against a known hash
 """
 
@@ -50,7 +50,6 @@ def interactive_mode():
     print()
     print("Paste this value into guardian_config.yaml:")
     print(f'  password_hash: "{digest}"')
-    print(f'  install_key_hash: "{digest}"')
     print()
     return 0
 
