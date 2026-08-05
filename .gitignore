@@ -45,6 +45,11 @@ desktop.ini
 # Secrets
 config/default.txt
 
+# Local agent/workspace state
+memory/
+.sisyphus/
+.cursor/
+
 # IDE extensions
 .specstory/
 *.msi
