@@ -44,7 +44,7 @@
 
 ## 1. 概述
 
-GuardianShield 是一套企业级源代码防泄漏系统，采用五层纵深防御架构，核心由三个组件组成：
+GuardianShield 是一套 Windows 源代码保护系统，采用多层防护架构，核心由三个组件组成：
 
 | 组件 | 进程名 | 服务名 | 运行方式 | 核心职责 |
 |------|--------|--------|---------|---------|
@@ -105,7 +105,7 @@ GuardianShield 是一套企业级源代码防泄漏系统，采用五层纵深�
 GuardianShield 使用 SHA-256 哈希值存储密码，不存储明文。管理员需要为以下两个密码生成哈希：
 
 1. **管理员密码** (`admin.password_hash`) — 用于锁屏解锁
-2. **安装/卸载密钥** (`admin.install_key_hash`) — 用于安装和卸载操作
+2. **安装/卸载密钥** (`admin.install_key`) — 用于安装和卸载操作
 
 **PowerShell 生成命令：**
 
@@ -143,9 +143,8 @@ admin:
   # 管理员密码的 SHA-256 哈希（锁屏解锁用）
   password_hash: "在此粘贴 3.1 节生成的哈希值"
 
-  # 安装/卸载密钥的 SHA-256 哈希
-  # 留空则使用默认密钥 GuardianShield2026!
-  install_key_hash: "在此粘贴 3.1 节生成的哈希值"
+   # 安装/卸载密钥（明文，必须由管理员设置）
+   install_key: "在此填写部署密钥"
 ```
 
 #### 保护目录（根据实际情况修改）
@@ -156,7 +155,7 @@ protection:
     - path: "D:\\Projects\\SourceCode"     # 保护的源码目录
       recursive: true                       # 递归保护子目录
       priority: HIGH
-    - path: "E:\\ConfidentialDocs"
+    - path: "E:\\ProtectedSource"
       recursive: true
       priority: MEDIUM
 ```
@@ -207,8 +206,8 @@ whitelist:
 ```
 # GuardianShield 授权清单
 # 格式: IP地址,MAC地址,备注
-192.168.1.100,AA:BB:CC:DD:EE:FF,研发一组-张三
-192.168.1.101,11:22:33:44:55:66,研发一组-李四
+192.0.2.10,00:11:22:33:44:55,example-workstation-1
+192.0.2.11,00:11:22:33:44:66,example-workstation-2
 192.168.1.102,A1:B2:C3:D4:E5:F6,测试机
 ```
 
@@ -609,7 +608,7 @@ reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v WindowsMonitor
 | 问题 | 原因 | 解决方案 |
 |------|------|---------|
 | 安装时提示"拒绝访问" | 未以管理员权限运行 | 右键"以管理员身份运行" |
-| 安装时提示"密钥错误" | 输入的密钥不正确 | 确认密钥原文与 `admin.install_key_hash` 对应。默认密钥为 `GuardianShield2026!` |
+| 安装时提示"密钥错误" | 输入的密钥不正确或配置为空 | 确认输入密钥与 `admin.install_key` 完全一致，并先在配置文件中填写该字段 |
 | 服务启动后立即停止 | 配置文件缺失或格式错误 | 检查 `C:\ProgramData\GuardianShield\` 下是否有 `config_cache.bin` 或新的 YAML 文件（YAML 可放在 config\ 子目录）。查看日志获取错误详情 |
 | 服务无法启动（错误 1053） | 服务启动超时 | 检查日志；可能由于配置加载耗时过长或依赖服务未就绪 |
 | winmon.exe 不在进程列表中 | GuardianC 未启动或已崩溃 | 手动运行 `winmon.exe --silent`；检查注册表自启动项是否正确 |
@@ -803,7 +802,7 @@ del temp_pwd.txt
 | `logging.daily_rotation` | bool | true | 是否按天轮转 |
 | **管理员** | | | |
 | `admin.password_hash` | string | "" | 管理员密码的 SHA-256 哈希（锁屏解锁用） |
-| `admin.install_key_hash` | string | "" | 安装/卸载密钥的 SHA-256 哈希 |
+| `admin.install_key` | string | "" | 安装/卸载密钥（明文，部署前必须填写） |
 | `admin.unlock_timeout_seconds` | int | 30 | 解锁等待超时时间（秒） |
 | **白名单** | | | |
 | `whitelist.processes[].name` | string | — | 进程可执行文件名 |
@@ -833,4 +832,4 @@ del temp_pwd.txt
 
 ---
 
-*GuardianShield v3.3.0 — 企业级源代码防泄漏系统*
+*GuardianShield v3.3.0 — Windows 源代码保护系统*

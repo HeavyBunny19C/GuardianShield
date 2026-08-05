@@ -23,7 +23,7 @@
 
 ## 1. 需求对照表
 
-下表逐项列出《保护方案》（H:\保护方案11.md）中的全部需求条目，以及 GuardianShield 的对应实现方式和源文件位置。
+下表逐项列出保护需求与 GuardianShield 的对应实现方式和源文件位置。
 
 | 序号 | 需求描述 | 实现状态 | 实现方式 | 关键源文件 |
 |------|---------|---------|---------|-----------|
@@ -149,7 +149,7 @@
   │   ├── ≤100MB: AES-256-GCM，格式 [GSENCR01 8B][SALT 16B][IV 12B][TAG 16B][密文...]
   │   ├── >100MB: AES-256-CBC+HMAC-SHA256 流式，格式 [GSENCR02 8B][SALT 16B][IV 16B][HMAC 32B][密文...]
   │   └── 加密后原文件替换为 .gs 文件（原子写入: .gs.tmp → rename）
-  └── 密码来源: admin.password_hash 或内置默认密码
+  └── 密码来源: admin.password_hash（必须由部署管理员配置）
 
 阶段 3: ENCRYPTING → WIPING
   ├── 对保护目录执行安全擦除
@@ -308,8 +308,8 @@ C:\ProgramData\GuardianShield\
 
 ```
 # 格式: IP地址,MAC地址,备注
-192.168.110.148,6C:24:08:23:3A:1B,本机测试
-192.168.110.124,14:18:C3:E3:A1:75,测试机
+192.0.2.10,00:11:22:33:44:55,example-workstation-1
+192.0.2.11,00:11:22:33:44:66,example-workstation-2
 ```
 
 - MAC 地址格式：`XX:XX:XX:XX:XX:XX`
@@ -359,7 +359,7 @@ C:\ProgramData\GuardianShield\
 | 卸载密钥 | `-uninstall -key <密码>` 同上 |
 | MSI 安装密钥 | `guardian_ca.dll` 自定义动作验证 |
 | 哈希算法 | Windows BCrypt SHA-256 |
-| 统一密钥管理 | `admin.install_key_hash` 可在 YAML 中配置，无需重新编译 |
+| 统一密钥管理 | `admin.install_key` 可在 YAML 中配置，无需重新编译 |
 | 一键卸载脚本 | `scripts/uninstall.bat` 含密钥验证，完整清理 |
 
 ### 7.5 配置保护
@@ -425,7 +425,7 @@ C:\ProgramData\GuardianShield\
 
 | 项目 | 说明 |
 |------|------|
-| 机制 | `admin.install_key_hash` 写入 YAML，服务启动时读取并缓存 |
+| 机制 | `admin.install_key` 写入 YAML，服务启动时读取并缓存 |
 | 优势 | 管理员可在配置文件中统一管理，无需重新编译 |
 | auth.list | 读取后自动删除，授权信息纳入二进制缓存 |
 
@@ -513,4 +513,4 @@ v3.2 发布前通过深度审计发现并修复了以下问题：
 
 ---
 
-*GuardianShield v3.3.0 — 企业级源代码防泄漏系统*
+*GuardianShield v3.3.0 — Windows 源代码保护系统*
