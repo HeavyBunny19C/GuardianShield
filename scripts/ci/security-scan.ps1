@@ -172,38 +172,35 @@ try {
         -FailMessage "Shared memory atomic operations may not be using Interlocked API!" `
         -WarningOnly
     
-    # Check 10: Plaintext Install Key (not SHA256)
+    # Check 10: No built-in install key
     Test-SecurityCheck `
         -Name "Plaintext Install Key" `
         -Test {
             $file = Get-Content "src/service/common/include/install_key.h" -Raw -ErrorAction Stop
-            # Should have DEFAULT_INSTALL_KEY (plaintext) not DEFAULT_INSTALL_KEY_HASH
-            $hasPlain = $file -match 'DEFAULT_INSTALL_KEY\s*='
-            $hasHash = $file -match 'DEFAULT_INSTALL_KEY_HASH'
-            return ($hasPlain -and -not $hasHash)
+            return ($file -notmatch 'GuardianShield20\d{2}')
         } `
-        -PassMessage "Using plaintext install key (not SHA256 hash)" `
-        -FailMessage "Still using SHA256 hash for install key instead of plaintext!"
+        -PassMessage "No built-in install key found" `
+        -FailMessage "A built-in install key is still present!"
     
     # Check 11: Install Key in Config Updated
     Test-SecurityCheck `
         -Name "Config Install Key Field" `
         -Test {
             $file = Get-Content "src/service/common/src/config.cpp" -Raw -ErrorAction Stop
-            # Should reference install_key not install_key_hash
-            return ($file -match 'install_key(?!_hash)')
+            # Should reference the configured install_key field.
+            return ($file -match 'install_key')
         } `
-        -PassMessage "Config uses install_key field (not install_key_hash)" `
-        -FailMessage "Config still using install_key_hash instead of install_key!"
+        -PassMessage "Config uses install_key field" `
+        -FailMessage "Config is missing the install_key field!"
     
     # Check 12: No Hardcoded Secrets in Source
     Test-SecurityCheck `
         -Name "No Hardcoded Secrets" `
         -Test {
             $patterns = @(
-                'password\s*=\s*["\'][^"\']+["\']',
-                'secret\s*=\s*["\'][^"\']+["\']',
-                'api[_-]?key\s*=\s*["\'][^"\']+["\']'
+                'password\s*=\s*[\x22\x27][^\x22\x27]+[\x22\x27]',
+                'secret\s*=\s*[\x22\x27][^\x22\x27]+[\x22\x27]',
+                'api[_-]?key\s*=\s*[\x22\x27][^\x22\x27]+[\x22\x27]'
             )
             $files = Get-ChildItem -Path "src/" -Recurse -Include "*.cpp","*.h","*.hpp"
             $found = $false
@@ -211,9 +208,8 @@ try {
                 $content = Get-Content $file.FullName -Raw
                 foreach ($pattern in $patterns) {
                     if ($content -match $pattern) {
-                        # Exclude comments and default key which is intentional
-                        if ($matches[0] -notmatch 'DEFAULT_INSTALL_KEY' -and 
-                            $matches[0] -notmatch '//' -and
+                        # Exclude comments
+                        if ($matches[0] -notmatch '//' -and
                             $matches[0] -notmatch '/\*') {
                             Write-Host "    Found in $($file.FullName): $($matches[0])" -ForegroundColor DarkYellow
                             $found = $true
@@ -223,7 +219,7 @@ try {
             }
             return -not $found
         } `
-        -PassMessage "No suspicious hardcoded secrets found (except intentional default key)" `
+        -PassMessage "No suspicious hardcoded secrets found" `
         -FailMessage "Potential hardcoded secrets detected!" `
         -WarningOnly
     

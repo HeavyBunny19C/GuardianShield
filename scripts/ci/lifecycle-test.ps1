@@ -5,7 +5,7 @@
     Performs complete lifecycle testing: install -> start -> verify -> stop -> uninstall
     Run this in CI or locally to validate the entire deployment lifecycle.
 .PARAMETER Key
-    The installation key to use (default: GuardianShield2024)
+    The installation key to use. This must match admin.install_key in the test configuration.
 .PARAMETER PackageDir
     Directory containing the deployment package (default: script directory)
 .PARAMETER InstallDir
@@ -22,7 +22,8 @@
     .\lifecycle-test.ps1 -SkipInstall -SkipCleanup  # Test uninstall only
 #>
 param(
-    [string]$Key = "GuardianShield2024",
+    [Parameter(Mandatory=$true)]
+    [string]$Key,
     [string]$PackageDir = "$PSScriptRoot",
     [string]$InstallDir = "C:\Program Files\GuardianShield",
     [string]$DataDir = "C:\ProgramData\GuardianShield",
