@@ -13,6 +13,7 @@
 #include <shlwapi.h>
 #include <sddl.h>
 #include <commdlg.h>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -20,9 +21,6 @@
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "comdlg32.lib")
-
-// Default plaintext install key (plaintext comparison, no SHA256 per user requirement)
-static const char* DEFAULT_INSTALL_KEY = "GuardianShield2024";
 
 static constexpr const wchar_t* RUNTIME_CONFIG_DIR =
     L"C:\\ProgramData\\GuardianShield\\config";
@@ -42,6 +40,65 @@ static std::wstring GetMsiProperty(MSIHANDLE hInstall, const wchar_t* name)
     MsiGetPropertyW(hInstall, name, &value[0], &size);
     value.resize(size);
     return value;
+}
+
+static std::wstring Trim(std::wstring value)
+{
+    const auto first = value.find_first_not_of(L" \t\r\n");
+    if (first == std::wstring::npos)
+        return L"";
+    const auto last = value.find_last_not_of(L" \t\r\n");
+    return value.substr(first, last - first + 1);
+}
+
+static std::wstring ReadConfiguredInstallKey(MSIHANDLE hInstall)
+{
+    const std::wstring configPath = GetMsiProperty(hInstall, L"CONFIG_YAML_PATH");
+    if (configPath.empty())
+        return L"";
+
+    std::wifstream file(configPath);
+    if (!file)
+        return L"";
+
+    bool inAdminSection = false;
+    std::wstring line;
+    while (std::getline(file, line)) {
+        const std::wstring trimmed = Trim(line);
+        if (trimmed.empty() || trimmed.front() == L'#')
+            continue;
+
+        const bool topLevel = line.empty() || (line.front() != L' ' && line.front() != L'\t');
+        if (topLevel && trimmed != L"admin:")
+            inAdminSection = false;
+        if (trimmed == L"admin:") {
+            inAdminSection = true;
+            continue;
+        }
+        if (!inAdminSection || trimmed.rfind(L"install_key:", 0) != 0)
+            continue;
+
+        std::wstring value = Trim(trimmed.substr(12));
+        if (value.size() >= 2 &&
+            ((value.front() == L'"' && value.back() == L'"') ||
+             (value.front() == L'\'' && value.back() == L'\''))) {
+            value = value.substr(1, value.size() - 2);
+        }
+        return value;
+    }
+    return L"";
+}
+
+static std::string Utf8FromWide(const std::wstring& value)
+{
+    if (value.empty())
+        return {};
+    const int size = WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (size <= 1)
+        return {};
+    std::string result(static_cast<size_t>(size - 1), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, result.data(), size, nullptr, nullptr);
+    return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,8 +163,8 @@ static bool ConstantTimeStringCompare(const std::string& a, const std::string& b
 // ---------------------------------------------------------------------------
 // Exported: ValidateInstallKey (immediate CA)
 //
-// Reads INSTALL_KEY property and compares to expected key using plaintext
-// comparison (no SHA256 hashing per user requirement).
+// Reads INSTALL_KEY and compares it with admin.install_key from the selected
+// configuration file. No repository default key is used.
 // Returns ERROR_SUCCESS on match, ERROR_INSTALL_FAILURE on mismatch.
 // ---------------------------------------------------------------------------
 extern "C" UINT __stdcall ValidateInstallKey(MSIHANDLE hInstall)
@@ -123,8 +180,14 @@ extern "C" UINT __stdcall ValidateInstallKey(MSIHANDLE hInstall)
     std::string keyA(cbNeeded - 1, '\0');
     WideCharToMultiByte(CP_UTF8, 0, keyW.c_str(), -1, &keyA[0], cbNeeded, nullptr, nullptr);
 
-    // Plaintext comparison (no SHA256 per user requirement)
-    if (!ConstantTimeStringCompare(keyA, DEFAULT_INSTALL_KEY)) {
+    const std::string expectedKey = Utf8FromWide(ReadConfiguredInstallKey(hInstall));
+    if (expectedKey.empty()) {
+        MsiMessageBox(hInstall,
+            L"[GuardianShield] 配置文件未设置 admin.install_key，无法验证安装密钥。");
+        return ERROR_INSTALL_FAILURE;
+    }
+
+    if (!ConstantTimeStringCompare(keyA, expectedKey)) {
         MsiMessageBox(hInstall,
             L"[GuardianShield] \u5b89\u88c5\u5bc6\u94a5\u9a8c\u8bc1\u5931\u8d25\uff0c\u8bf7\u786e\u8ba4\u5bc6\u94a5\u662f\u5426\u6b63\u786e\u3002");
         return ERROR_INSTALL_FAILURE;
