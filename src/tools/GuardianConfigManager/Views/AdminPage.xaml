@@ -34,15 +34,15 @@
                             Style="{StaticResource PrimaryButton}"/>
                 </Grid>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="安装密钥哈希" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="安装密钥" Style="{StaticResource FieldLabel}"/>
                 <Grid Grid.Row="1" Grid.Column="1" Margin="0,4,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Text="{Binding Config.Admin.InstallKeyHash, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox Grid.Column="0" Text="{Binding Config.Admin.InstallKey, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,8,0"/>
-                    <Button Grid.Column="1" Content="生成" Command="{Binding GenerateKeyHashCommand}"
+                    <Button Grid.Column="1" Content="设置" Command="{Binding GenerateKeyHashCommand}"
                             Style="{StaticResource PrimaryButton}"/>
                 </Grid>
 
@@ -51,7 +51,7 @@
                          Margin="0,4,0,8"/>
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource FieldLabel}"/>
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="哈希值可通过点击「生成」按钮，输入密码或密钥后自动计算 SHA-256 得到。"
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="密码保存为 SHA-256；安装密钥按原文保存，用于安装程序验证。"
                          Foreground="#5F6368" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
             </Grid>
         </StackPanel>
