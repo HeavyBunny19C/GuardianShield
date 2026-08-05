@@ -2,9 +2,8 @@
  * @file install_key.h
  * @brief Install/Uninstall key verification using plaintext comparison
  * 
- * Supports two modes:
- * 1. Config-backed: reads install_key from Config cache (set in guardian_config.yaml)
- * 2. Hardcoded fallback: uses built-in default key for first-time installation
+ * The key must come from the configuration cache. No built-in fallback key is
+ * shipped with the repository.
  * 
  * NOTE: This is plaintext comparison (no SHA256 hashing) per user requirement.
  */
@@ -16,9 +15,6 @@
 #include <Windows.h>
 
 namespace Guardian {
-
-// Default plaintext install key (can be changed during build)
-static constexpr const char* DEFAULT_INSTALL_KEY = "GuardianShield2024";
 
 /**
  * Get the install key from command line arguments or environment variable.
@@ -79,12 +75,11 @@ inline bool VerifyInstallKeyAgainstExpected(int argc, wchar_t** argv, const std:
 }
 
 /**
- * Verify install key. If configKey is non-empty, use it; otherwise fall back to default.
+ * Verify install key. An explicit configured key is required.
  */
 inline bool VerifyInstallKey(int argc, wchar_t** argv, const std::string& configKey = "") {
-    std::string expected = configKey.empty() ? std::string(DEFAULT_INSTALL_KEY) : configKey;
-    if (expected.empty()) return false;
-    return VerifyInstallKeyAgainstExpected(argc, argv, expected);
+    if (configKey.empty()) return false;
+    return VerifyInstallKeyAgainstExpected(argc, argv, configKey);
 }
 
 } // namespace Guardian
