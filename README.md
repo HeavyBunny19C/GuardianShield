@@ -283,7 +283,7 @@ system:
 
 protection:
   directories:
-    - path: "C:\\Users\\lb\\Documents\\GUARD_Test"
+    - path: "C:\\Projects\\SourceCode"
       recursive: true
       priority: HIGH
 
@@ -296,8 +296,8 @@ emergency:
 
 ```
 # 格式: IP地址,MAC地址,备注
-192.168.1.100,AA:BB:CC:DD:EE:FF,张三工位
-192.168.1.101,11:22:33:44:55:66,李四工位
+192.0.2.10,00:11:22:33:44:55,example-workstation-1
+192.0.2.11,00:11:22:33:44:66,example-workstation-2
 ```
 
 > **配置"钥匙"机制**：服务读取 `guardian_config.yaml` 后会自动删除该文件，仅保留受 ACL 保护的二进制缓存。管理员更新策略时，将新的 YAML 文件放入配置目录，重启服务即可生效。
@@ -617,7 +617,7 @@ GuardianShield/
 | 内核级文件拦截 | GuardFilter.sys minifilter BLOCK 策略 | IRP_MJ_SET_INFORMATION 拦截文件重命名/移动，返回 STATUS_ACCESS_DENIED |
 | 内核进程保护 | ObRegisterCallbacks | 阻止外部进程终止 Guardian 服务（需 WDK） |
 | 服务恢复 | 自动重启策略 | 5s → 30s → 60s 递增延迟 |
-| 统一安装密钥 | YAML admin.install_key_hash | 管理员可在配置文件中统一管理，无需重新编译 |
+| 统一安装密钥 | YAML `admin.install_key` | 管理员可在配置文件中统一管理，无需重新编译 |
 | MSI 安装包 | WiX + guardian_ca.dll | 密钥验证 + 配置文件选择 + 服务自动注册 |
 
 ---
@@ -775,4 +775,4 @@ rmdir /s /q "C:\ProgramData\GuardianShield"
 
 ## 许可证
 
-企业内部使用，保密。
+本项目采用 MIT License，详见仓库根目录的 `LICENSE` 文件。

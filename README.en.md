@@ -90,7 +90,7 @@ install.bat /uninstall /key <安装密钥>
 - `BLOCK` 依赖 `GuardFilter.sys`；驱动未加载时不会自动降级为进程终止。
 - TCP 通道尚未初始化，TLS 尚未实现。
 - 部分事件类型仍是预留项，详见 [`docs/FUNCTIONAL_SPEC.md`](docs/FUNCTIONAL_SPEC.md)。
-- 仓库未包含开源 `LICENSE` 文件，现有项目文档将其描述为内部/保密使用项目。
+- 项目采用 MIT License，详见仓库根目录的 `LICENSE` 文件。
 
 ## 📚 中文文档
 
@@ -245,7 +245,7 @@ If GoogleTest is not already available, CMake fetches GoogleTest 1.14.0 during c
 - Several event types remain reserved for future event sources. See the functional specification for the implemented/reserved matrix.
 - TCP transport is defined in parts of the codebase but is not initialized, and TLS is not implemented.
 - Tier 2 wiping and deletion are destructive operations. Do not enable them against irreplaceable data without an independent backup and an isolated recovery test.
-- The repository does not currently include an open-source `LICENSE` file. The existing project documentation describes the project as for internal/confidential use.
+- This project is released under the MIT License. See the repository root `LICENSE` file.
 
 ## Project Status
 
